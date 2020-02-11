@@ -3,8 +3,8 @@ package com.mg.community.controller;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.mg.community.cache.HotTabCache;
-import com.mg.community.cache.HotTopicsDataCache;
 import com.mg.community.cache.HotTopicsCache;
+import com.mg.community.cache.HotTopicsDataCache;
 import com.mg.community.dto.HotTopicDataDTO;
 import com.mg.community.dto.QuestionDTO;
 import com.mg.community.dto.ResultDTO;
@@ -12,14 +12,13 @@ import com.mg.community.model.Question;
 import com.mg.community.service.QuestionService;
 import com.mg.community.util.BaseUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @ClassName HotTopicsController
@@ -28,6 +27,7 @@ import java.util.stream.Collectors;
  * @Date 2019/12/20 11:25
  * @Version 1.0
  */
+@CrossOrigin(origins = "http://localhost:8080")
 @RestController
 public class HotTopicsController {
 

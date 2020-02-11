@@ -7,10 +7,9 @@ import com.mg.community.util.EnvInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -42,6 +41,7 @@ import java.util.UUID;
  * @Version 1.0
  */
 
+@CrossOrigin(origins = "http://localhost:8080")
 @RestController
 @Slf4j
 public class FileUploadController {
@@ -65,7 +65,7 @@ public class FileUploadController {
         //修改文件名
         String fileName = UUID.randomUUID().toString() + "." + originalFilename.split("\\.")[1];
 
-        File uploadFile = new File(uploadRoot +uploadPath,fileName);
+        File uploadFile = new File(uploadRoot + uploadPath, fileName);
 
         try {
             file.transferTo(uploadFile);
@@ -80,7 +80,7 @@ public class FileUploadController {
 
         //上传成功
         //组装markdown editor所需要的返回信息
-        String rtnPath = envInfo.getUrl()+ uploadPath + "/" + fileName;
+        String rtnPath = envInfo.getUrl() + uploadPath + "/" + fileName;
         fileUploadDTO.setSuccess(1);
         fileUploadDTO.setMessage("File has already uploaded successfully!");
         fileUploadDTO.setUrl(rtnPath);

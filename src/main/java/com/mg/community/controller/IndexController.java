@@ -2,7 +2,6 @@ package com.mg.community.controller;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.mg.community.cache.HotTabCache;
 import com.mg.community.cache.HotTopicsCache;
 import com.mg.community.dto.QuestionDTO;
 import com.mg.community.dto.ResultDTO;
@@ -10,22 +9,17 @@ import com.mg.community.model.Question;
 import com.mg.community.service.QuestionService;
 import com.mg.community.util.BaseUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
+@CrossOrigin(origins = "http://localhost:8080")
 @RestController
 @Slf4j
 public class IndexController {

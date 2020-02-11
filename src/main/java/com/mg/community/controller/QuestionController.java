@@ -2,7 +2,6 @@ package com.mg.community.controller;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.mg.community.cache.HotTabCache;
 import com.mg.community.dto.CommentDTO;
 import com.mg.community.dto.NotificationDTO;
 import com.mg.community.dto.QuestionDTO;
@@ -18,20 +17,16 @@ import com.mg.community.service.QuestionService;
 import com.mg.community.util.BaseUtil;
 import com.mg.community.util.RedisUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
+@CrossOrigin(origins = "http://localhost:8080")
 @Slf4j
 @RestController
 public class QuestionController {

@@ -7,14 +7,13 @@ import com.mg.community.model.Notification;
 import com.mg.community.model.User;
 import com.mg.community.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
+@CrossOrigin(origins = "http://localhost:8080")
 @RestController
 public class NotificationController {
 
