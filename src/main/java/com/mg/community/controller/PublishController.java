@@ -1,10 +1,13 @@
 package com.mg.community.controller;
 
+import com.mg.community.annotation.UserLoginToken;
 import com.mg.community.cache.HotTabCache;
 import com.mg.community.cache.TagCache;
+import com.mg.community.common.OutputService;
 import com.mg.community.dto.QuestionDTO;
 import com.mg.community.dto.ResultDTO;
-import com.mg.community.exception.CustomizeErrorCode;
+import com.mg.community.exception.CommunityErrorCode;
+import com.mg.community.exception.CustomizeException;
 import com.mg.community.model.Question;
 import com.mg.community.model.User;
 import com.mg.community.service.QuestionService;
@@ -19,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = "http://localhost:8080")
+//@CrossOrigin(origins = "http://localhost:8080")
 @RestController
 public class PublishController {
 
@@ -29,8 +32,13 @@ public class PublishController {
     @Autowired
     private RedisUtil redisUtil;
 
-    @GetMapping("/publish/{id}")
-    public Object edit(@PathVariable(name = "id") Long id) {
+    @Autowired
+    private OutputService outputService;
+
+    @UserLoginToken
+    @GetMapping("/api/publish/{id}")
+    public Object edit(@PathVariable(name = "id") Long id,
+                       HttpServletRequest request) {
 
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();
@@ -56,18 +64,23 @@ public class PublishController {
         outUni.put("id", id);
         outUni.put("selectTags", TagCache.getHotTags());
 
+        outUni.put("common", outputService.getCommonOutput(request));
+
         return ResultDTO.okOf(outUni);
     }
 
-    @GetMapping("/publish")
-    public Object publish() {
+    @UserLoginToken
+    @GetMapping("/api/publish")
+    public Object publish(HttpServletRequest request) {
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();
         outUni.put("selectTags", TagCache.getHotTags());
+        outUni.put("common", outputService.getCommonOutput(request));
         return ResultDTO.okOf(outUni);
     }
 
-    @PostMapping("/publish")
+    @UserLoginToken
+    @PostMapping("/api/publish")
     public Object dopublish(
             @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "content", required = false) String content,
@@ -84,26 +97,28 @@ public class PublishController {
         outUni.put("tag", tag);
         outUni.put("selectTags", TagCache.getHotTags());
 
-        if (id != null) {
+        if (id != null && id > 0) {
             outUni.put("id", id);
         }
 
         //校验页面字段
         if (title == null || title.equals("")) {
-            return ResultDTO.errorOf(CustomizeErrorCode.PUBLISH_TITLE_EMPTY);
+            throw new CustomizeException(CommunityErrorCode.PUBLISH_TITLE_EMPTY);
         }
 
         if (content == null || content.equals("")) {
-            return ResultDTO.errorOf(CustomizeErrorCode.PUBLISH_CONTENT_EMPTY);
+            throw new CustomizeException(CommunityErrorCode.PUBLISH_CONTENT_EMPTY);
         }
 
         if (tag == null || tag.trim().equals("") || tag.trim().equals(",")) {
-            return ResultDTO.errorOf(CustomizeErrorCode.PUBLISH_TAG_INVALID);
+            throw new CustomizeException(CommunityErrorCode.PUBLISH_TAG_INVALID);
         }
 
         String checkInvalidTag = TagCache.checkInvalid(tag);
         if (!StringUtils.isBlank(checkInvalidTag)) {
-            return ResultDTO.errorOf(CustomizeErrorCode.PUBLISH_TAG_INVALID, checkInvalidTag);
+            Map<String, String> map = new HashMap<>();
+            map.put("&1",checkInvalidTag);
+            throw new CustomizeException(CommunityErrorCode.PUBLISH_TAG_INVALID, map);
         }
 
         //处理tag多余的逗号
@@ -121,7 +136,9 @@ public class PublishController {
         question.setTag(tag);
         User user = (User) request.getSession().getAttribute("user");
         question.setCreator(user.getId());
-        question.setId(id);
+        if (id != null && id > 0) {
+            question.setId(id);
+        }
         questionService.createOrUpdate(question);
 
         //更新Redis中question数据
@@ -131,6 +148,8 @@ public class PublishController {
 
             //是否需要更新相关问题，此部分暂不考虑，因为相关问题一天更新一次也是可以的；
         }
+
+        outUni.put("common", outputService.getCommonOutput(request));
 
         return ResultDTO.okOf(outUni);
     }

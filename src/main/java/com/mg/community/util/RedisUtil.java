@@ -1,11 +1,9 @@
 package com.mg.community.util;
 
 import com.mg.community.enums.StatusEnum;
-import com.mg.community.model.Sysparam;
 import com.mg.community.service.SysparamService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.BoundListOperations;
 import org.springframework.data.redis.core.RedisTemplate;

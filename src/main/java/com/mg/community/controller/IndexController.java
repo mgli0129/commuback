@@ -3,6 +3,7 @@ package com.mg.community.controller;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.mg.community.cache.HotTopicsCache;
+import com.mg.community.common.OutputService;
 import com.mg.community.dto.QuestionDTO;
 import com.mg.community.dto.ResultDTO;
 import com.mg.community.model.Question;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,10 +32,14 @@ public class IndexController {
     @Autowired
     private HotTopicsCache hotTopicsCache;
 
-    @GetMapping("/")
+    @Autowired
+    private OutputService outputService;
+
+    @GetMapping("/api")
     public Object index(@RequestParam(value = "pageNum", required = false, defaultValue = "1") int pageNum,
                         @RequestParam(required = false, defaultValue = "15") int pageSize,
-                        @RequestParam(value = "search", required = false) String search) {
+                        @RequestParam(value = "search", required = false) String search,
+                        HttpServletRequest request) {
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();
 
@@ -54,6 +60,7 @@ public class IndexController {
 
         outUni.put("questions", questionDTOs);
         outUni.put("pageInfo", pageInfo);
+        outUni.put("common", outputService.getCommonOutput(request));
         outUni.put("search", search);
         outUni.put("hotTopics", hotTopics);
 

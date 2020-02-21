@@ -5,20 +5,26 @@ import com.github.pagehelper.PageInfo;
 import com.mg.community.cache.HotTabCache;
 import com.mg.community.cache.HotTopicsCache;
 import com.mg.community.cache.HotTopicsDataCache;
+import com.mg.community.common.OutputService;
 import com.mg.community.dto.HotTopicDataDTO;
 import com.mg.community.dto.QuestionDTO;
 import com.mg.community.dto.ResultDTO;
+import com.mg.community.dto.TagUserWallDTO;
 import com.mg.community.model.Question;
+import com.mg.community.model.User;
 import com.mg.community.service.QuestionService;
+import com.mg.community.service.UserService;
 import com.mg.community.util.BaseUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @ClassName HotTopicsController
@@ -40,12 +46,19 @@ public class HotTopicsController {
     @Autowired
     private HotTopicsDataCache hotTopicsDataCache;
 
-    @GetMapping("/hottopics/{id}")
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private OutputService outputService;
+
+    @GetMapping("/api/hottopics/{id}")
     public Object getHotTopics(@PathVariable(value = "id", required = false) int id,
                                @RequestParam(value = "tag", required = false) String tag,
                                @RequestParam(value = "pageNum", required = false, defaultValue = "1") int pageNum,
-                               @RequestParam(required = false, defaultValue = "15") int pageSize,
-                               @RequestParam(value = "search", required = false) String search) {
+                               @RequestParam(value = "pageSize", required = false, defaultValue = "15") int pageSize,
+                               @RequestParam(value = "search", required = false) String search,
+                               HttpServletRequest request) {
 
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();
@@ -87,11 +100,23 @@ public class HotTopicsController {
             outUni.put("topic", tag);
         }
 
+        //获取该话题的所有用户头像链接（图片墙）
+        List<Question> list = questionService.findAllBySearch(null);
+        List<TagUserWallDTO> tagUsers = list.stream().map(l -> {
+            User user = userService.findById(l.getCreator());
+            TagUserWallDTO tagUserWallDTO = new TagUserWallDTO();
+            tagUserWallDTO.setId(user.getId());
+            tagUserWallDTO.setAvatarUrl(user.getAvatarUrl());
+            return tagUserWallDTO;
+        }).collect(Collectors.toList());
+
         outUni.put("questions", questionDTOs);
         outUni.put("pageInfo", pageInfo);
         outUni.put("search", search);
         outUni.put("tabs", HotTabCache.getHotTopicTabs());
         outUni.put("id", id);
+        outUni.put("tagUsers", tagUsers);
+        outUni.put("common", outputService.getCommonOutput(request));
 
         return ResultDTO.okOf(outUni);
     }

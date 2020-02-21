@@ -1,27 +1,26 @@
 package com.mg.community.controller;
 
 import com.mg.community.Provider.GithubProvider;
+import com.mg.community.common.OutputService;
 import com.mg.community.dto.AccessTokenDTO;
 import com.mg.community.dto.GithubUser;
 import com.mg.community.dto.ResultDTO;
-import com.mg.community.exception.CustomizeErrorCode;
+import com.mg.community.exception.CommonErrorCode;
+import com.mg.community.exception.CustomizeException;
 import com.mg.community.model.User;
 import com.mg.community.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
-@CrossOrigin(origins = "http://localhost:8080")
+//@CrossOrigin(origins = "http://localhost:8080")
 @RestController
 public class GithubOAuthController {
 
@@ -30,6 +29,9 @@ public class GithubOAuthController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private OutputService outputService;
 
     @Value("${github.client.id}")
     private String githubClientId;
@@ -43,9 +45,10 @@ public class GithubOAuthController {
     @GetMapping("/callback")
     public Object callback(@RequestParam("code") String code,
                            @RequestParam("state") String state,
+                           HttpServletRequest request,
                            HttpServletResponse response) {
-        if (code == null || code.equals("")){
-            return ResultDTO.errorOf(CustomizeErrorCode.GITHUB_ACCOUNT_VERIFIED_FAILURE);
+        if (code == null || code.equals("")) {
+            return ResultDTO.errorOf(CommonErrorCode.LOGIN_GITHUB_ACCOUNT_VERIFIED_FAILURE);
         }
         AccessTokenDTO accessTokenDTO = new AccessTokenDTO();
         accessTokenDTO.setClient_id(githubClientId);
@@ -62,42 +65,37 @@ public class GithubOAuthController {
 
         if (githubUser != null) {
             User userAcc = userService.findByAccountId(githubUser.getLogin());
-            String token = null;
-            if(userAcc == null){
+//            String token = null;
+            if (userAcc == null) {
                 //登录成功，写入数据库
                 User user = new User();
                 user.setAccountId(githubUser.getLogin());
                 user.setName(githubUser.getName());
-                token = UUID.randomUUID().toString();
-                user.setToken(token);
+//                token = UUID.randomUUID().toString();
+//                user.setToken(token);
                 user.setAvatarUrl(githubUser.getAvatarUrl());
                 userService.createOrUpdate(user);
-            }else{
+                userAcc = userService.findByName(githubUser.getLogin());
+            }/* else {
                 token = userAcc.getToken();
-            }
+            }*/
             //写入cookie
-            Cookie cookie = new Cookie("token", token);
-            response.addCookie(cookie);
+//            Cookie cookie = new Cookie("token", token);
+//            cookie.setPath("/");
+//            response.addCookie(cookie);
+
+            //登录成功，在session里保存user信息
+            request.getSession().setAttribute("user", userAcc);
+
             //输出格式测试
             Map<String, Object> outUni = new HashMap<String, Object>();
-            outUni.put("token", token);
+            outUni.put("common", outputService.getCommonOutput(request));
 
             return ResultDTO.okOf(outUni);
         } else {
             //登录失败
-            return ResultDTO.errorOf(CustomizeErrorCode.GITHUB_ACCOUNT_NOT_EXIST);
+            throw new CustomizeException(CommonErrorCode.LOGIN_GITHUB_ACCOUNT_NOT_EXIST);
         }
-    }
-
-    @GetMapping("/logout")
-    public Object logout(HttpServletRequest request,
-                         HttpServletResponse response){
-        request.getSession().removeAttribute("user");
-        Cookie cookie = new Cookie("token", null);
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
-
-        return ResultDTO.okOf();
     }
 
 }

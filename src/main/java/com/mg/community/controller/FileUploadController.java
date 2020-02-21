@@ -1,22 +1,19 @@
 package com.mg.community.controller;
 
-import com.mg.community.dto.FileUploadDTO;
+import com.mg.community.annotation.UserLoginToken;
 import com.mg.community.dto.ResultDTO;
-import com.mg.community.exception.CustomizeErrorCode;
+import com.mg.community.exception.CommunityErrorCode;
 import com.mg.community.util.EnvInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * @ClassName FileUploadController
@@ -55,37 +52,40 @@ public class FileUploadController {
     @Autowired
     private EnvInfo envInfo;
 
-    @RequestMapping("/upload")
-    public FileUploadDTO upload(@RequestParam(value = "editormd-image-file", required = false) MultipartFile file, HttpServletRequest request) {
+    @UserLoginToken
+    @RequestMapping(value = "/api/upload", method = RequestMethod.POST)
+    public Object upload(@RequestParam(value = "files", required = false) MultipartFile[] files, HttpServletRequest request) {
 
-        FileUploadDTO fileUploadDTO = new FileUploadDTO();
-        String originalFilename = file.getOriginalFilename();
-        log.info("file name is {}" + originalFilename);
+        //输出格式测试
+        Map<String, Object> outUni = new HashMap<String, Object>();
+        List<String> urlList = new ArrayList();
 
-        //修改文件名
-        String fileName = UUID.randomUUID().toString() + "." + originalFilename.split("\\.")[1];
+        for (MultipartFile file : files) {
+            String originalFilename = file.getOriginalFilename();
+            log.info("file name is {}" + originalFilename);
 
-        File uploadFile = new File(uploadRoot + uploadPath, fileName);
+            //修改文件名
+            String fileName = UUID.randomUUID().toString() + "." + originalFilename.split("\\.")[1];
+            File uploadFile = new File(uploadRoot + uploadPath, fileName);
 
-        try {
-            file.transferTo(uploadFile);
-        } catch (IOException e) {
-            //上传失败
-            log.debug("File upload failure: {}" + ResultDTO.errorOf(CustomizeErrorCode.FILE_UPLOAD_FAILURE));
-            fileUploadDTO.setSuccess(0);
-            fileUploadDTO.setMessage(ResultDTO.errorOf(CustomizeErrorCode.FILE_UPLOAD_FAILURE).getMessage());
-            fileUploadDTO.setUrl("");
-            return fileUploadDTO;
+            try {
+                file.transferTo(uploadFile);
+            } catch (IOException e) {
+                //上传失败
+                log.debug("File upload failure: {}" + ResultDTO.errorOf(CommunityErrorCode.FILE_UPLOAD_FAILURE));
+            }
+            //上传成功
+            //组装markdown editor所需要的返回信息
+            String rtnPath = envInfo.getUrl() + uploadPath + "/" + fileName;
+            urlList.add(rtnPath);
         }
 
-        //上传成功
-        //组装markdown editor所需要的返回信息
-        String rtnPath = envInfo.getUrl() + uploadPath + "/" + fileName;
-        fileUploadDTO.setSuccess(1);
-        fileUploadDTO.setMessage("File has already uploaded successfully!");
-        fileUploadDTO.setUrl(rtnPath);
-        log.info("uploading file: {}" + fileUploadDTO);
+        if (urlList.size() < 1) {
+            return ResultDTO.errorOf(CommunityErrorCode.FILE_UPLOAD_FAILURE);
+        }
 
-        return fileUploadDTO;
+        outUni.put("urlList", urlList);
+        log.info("files uploaded successfully" + urlList);
+        return ResultDTO.okOf(outUni);
     }
 }

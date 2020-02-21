@@ -1,46 +1,55 @@
 package com.mg.community.advice;
 
-import com.alibaba.fastjson.JSON;
 import com.mg.community.dto.ResultDTO;
-import com.mg.community.exception.CustomizeErrorCode;
+import com.mg.community.exception.CommonErrorCode;
+import com.mg.community.exception.CommunityErrorCode;
 import com.mg.community.exception.CustomizeException;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintWriter;
 
 @ControllerAdvice
 @ResponseBody
 public class CustomizeExceptionHandler {
 
     @ExceptionHandler(Exception.class)
-    Object handler(Throwable e,HttpServletRequest request,
-                         HttpServletResponse response){
-        String contentType = request.getContentType();
+    Object handler(Throwable e, HttpServletRequest request,
+                   HttpServletResponse response) {
+//        String contentType = request.getContentType();
         ResultDTO resultDTO = new ResultDTO();
-        if("application/json".equals(contentType)){
-            if(e instanceof CustomizeException){
-                return ResultDTO.errorOf((CustomizeException) e);
-            }else{
-                return ResultDTO.errorOf((CustomizeErrorCode.GENERAL_ERROR));
+
+        if (e instanceof CustomizeException) {
+            CustomizeException curException = (CustomizeException) e;
+            String errorType = ResultDTO.returnErrorType(curException);
+            switch (errorType) {
+                case "CommonErrorCode":
+                    // 登录过期
+                    if (curException.getCode() == CommonErrorCode.TOKEN_HAS_EXPIRED.getCode()
+                            || curException.getCode() == CommonErrorCode.TOKEN_SESSION_HAS_EXPIRED.getCode())
+                        response.setStatus(403);
+                    else if (curException.getCode() == CommonErrorCode.TOKEN_NULL.getCode() ||
+                            curException.getCode() == CommonErrorCode.TOKEN_INVALID.getCode()||
+                            curException.getCode() == CommonErrorCode.TOKEN_USER_NOT_FOUND.getCode()){
+                        // 未登录
+                        response.setStatus(401);
+                    }else{
+                        response.setStatus(500);
+                    }
+                    break;
+                case "CommunityErrorCode":
+                    response.setStatus(500);
+                    break;
+                default:
+                    response.setStatus(500);
+                    break;
             }
-        }else{
-            if(e instanceof CustomizeException){
-                resultDTO.setCode(((CustomizeException) e).getCode());
-                resultDTO.setMessage(e.getMessage());
-                return resultDTO;
-            }else{
-                resultDTO.setCode(CustomizeErrorCode.GENERAL_ERROR.getCode());
-                resultDTO.setMessage(CustomizeErrorCode.GENERAL_ERROR.getMessage());
-                return resultDTO;
-            }
+            return ResultDTO.errorOf(curException);
+        } else {
+            response.setStatus(500);
+            return ResultDTO.errorOf(CommonErrorCode.GENERAL_ERROR);
         }
     }
-
 }

@@ -1,8 +1,11 @@
 package com.mg.community.controller;
 
+import com.mg.community.annotation.UserLoginToken;
+import com.mg.community.common.OutputService;
 import com.mg.community.dto.ResultDTO;
 import com.mg.community.enums.NotificationTypeEnum;
-import com.mg.community.exception.CustomizeErrorCode;
+import com.mg.community.exception.CommunityErrorCode;
+import com.mg.community.exception.CustomizeException;
 import com.mg.community.model.Notification;
 import com.mg.community.model.User;
 import com.mg.community.service.NotificationService;
@@ -20,12 +23,13 @@ public class NotificationController {
     @Autowired
     private NotificationService notificationService;
 
-    @RequestMapping(value = "/notify/{id}", method = RequestMethod.GET)
+    @Autowired
+    private OutputService outputService;
+
+    @UserLoginToken
+    @RequestMapping(value = "/api/notify/{id}", method = RequestMethod.GET)
     public Object readNotifyMessage(@PathVariable("id") Long id, HttpServletRequest request){
-        Object user = request.getSession().getAttribute("user");
-        if(user == null){
-            return ResultDTO.errorOf(CustomizeErrorCode.NO_LOGIN);
-        }
+
         //标记通知已读
         notificationService.readNotify(id);
         Notification notification = notificationService.findById(id);
@@ -33,20 +37,27 @@ public class NotificationController {
             //输出格式测试
             Map<String, Object> outUni = new HashMap<String, Object>();
             outUni.put("id", notification.getQuestionid());
+            outUni.put("common", outputService.getCommonOutput(request));
             return ResultDTO.okOf(outUni);
         }else{
-            return ResultDTO.errorOf(CustomizeErrorCode.TYPE_PARAM_NOT_FOUND);
+            throw new CustomizeException(CommunityErrorCode.TYPE_PARAM_NOT_FOUND);
         }
     }
 
-    @RequestMapping(value = "/clear", method = RequestMethod.GET)
+    @UserLoginToken
+    @RequestMapping(value = "/api/clear", method = RequestMethod.GET)
     public Object clearNotifications(HttpServletRequest request) {
 
         User user = (User) request.getSession().getAttribute("user");
-        if (user == null) {
-            return ResultDTO.errorOf(CustomizeErrorCode.NO_LOGIN);
-        }
+//        if (user == null) {
+//            return ResultDTO.errorOf(CommunityErrorCode.TOKEN_SESSION_HAS_EXPIRED);
+//        }
         notificationService.clearByReceiver(user);
-        return ResultDTO.okOf();
+
+        //输出格式测试
+        Map<String, Object> outUni = new HashMap<String, Object>();
+        outUni.put("common", outputService.getCommonOutput(request));
+
+        return ResultDTO.okOf(outUni);
     }
 }

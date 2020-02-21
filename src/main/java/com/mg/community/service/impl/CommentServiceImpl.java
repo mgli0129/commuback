@@ -3,7 +3,7 @@ package com.mg.community.service.impl;
 import com.mg.community.dto.CommentDTO;
 import com.mg.community.enums.CommentTypeEnum;
 import com.mg.community.enums.NotificationTypeEnum;
-import com.mg.community.exception.CustomizeErrorCode;
+import com.mg.community.exception.CommunityErrorCode;
 import com.mg.community.exception.CustomizeException;
 import com.mg.community.mapper.CommentExtMapper;
 import com.mg.community.mapper.CommentMapper;
@@ -49,24 +49,24 @@ public class CommentServiceImpl implements CommentService {
 
         //校验
         if (comment.getParentId() == null || comment.getParentId() == 0L) {
-            throw new CustomizeException(CustomizeErrorCode.TARGET_PARAM_NOT_FOUND);
+            throw new CustomizeException(CommunityErrorCode.TARGET_PARAM_NOT_FOUND);
         }
 
         if (comment.getType() == null || !CommentTypeEnum.isExist(comment.getType())) {
-            throw new CustomizeException(CustomizeErrorCode.TYPE_PARAM_NOT_FOUND);
+            throw new CustomizeException(CommunityErrorCode.TYPE_PARAM_NOT_FOUND);
         }
 
         if (comment.getType() == CommentTypeEnum.COMMENT.getType()) {
             //回复comment
             parentComment = findById(comment.getParentId());
             if (parentComment == null) {
-                throw new CustomizeException(CustomizeErrorCode.COMMENT_NOT_FOUND);
+                throw new CustomizeException(CommunityErrorCode.COMMENT_NOT_FOUND);
             }
         } else {
             //回复question
             question = questionService.findById(comment.getParentId());
             if (question == null) {
-                throw new CustomizeException(CustomizeErrorCode.QUESTION_NOT_FOUND);
+                throw new CustomizeException(CommunityErrorCode.QUESTION_NOT_FOUND);
             }
         }
 
@@ -161,5 +161,20 @@ public class CommentServiceImpl implements CommentService {
         }).collect(Collectors.toList());
 
         return commentDTOs;
+    }
+
+    @Override
+    public CommentDTO findCommentDTOById(Long id) {
+        CommentExample commentExample = new CommentExample();
+        commentExample.createCriteria().andIdEqualTo(id);
+        List<Comment> comments = commentMapper.selectByExample(commentExample);
+        if(comments != null){
+            CommentDTO commentDTO = new CommentDTO();
+            BeanUtils.copyProperties(comments.get(0), commentDTO);
+            commentDTO.setUser(userService.findById(comments.get(0).getCommentator()));
+            return commentDTO;
+        }else {
+            throw new CustomizeException(CommunityErrorCode.COMMENT_NOT_FOUND);
+        }
     }
 }

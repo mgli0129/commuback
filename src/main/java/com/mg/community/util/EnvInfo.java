@@ -1,7 +1,8 @@
 package com.mg.community.util;
 
 import com.mg.community.dto.ResultDTO;
-import com.mg.community.exception.CustomizeErrorCode;
+import com.mg.community.exception.CommonErrorCode;
+import com.mg.community.exception.CommunityErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -34,7 +35,7 @@ public class EnvInfo {
         try {
             localHost = InetAddress.getLocalHost();
         } catch (UnknownHostException e) {
-            log.debug("Get environment error: {}" + ResultDTO.errorOf(CustomizeErrorCode.GET_ENVIRONMENT_ERROR));
+            log.debug("Get environment error: {}" + ResultDTO.errorOf(CommonErrorCode.SYSTEM_GET_ENV_ERROR));
         }
         ip = localHost.getHostAddress();
         return "http://" + ip + ":" + port + "/";

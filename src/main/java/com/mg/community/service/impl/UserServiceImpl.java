@@ -77,6 +77,10 @@ public class UserServiceImpl implements UserService {
 
         if(user.getId() == null){
             //insert
+            if(user.getAvatarUrl() == null){
+                user.setAvatarUrl("/imges/default_logo.jpg");
+            }
+
             user.setGmtCreate(System.currentTimeMillis());
             user.setGmtModified(user.getGmtCreate());
             userMapper.insert(user);
@@ -105,5 +109,16 @@ public class UserServiceImpl implements UserService {
         UserExample userExample = new UserExample();
         userExample.createCriteria().andIdIn(userIds);
         return userMapper.selectByExample(userExample);
+    }
+
+    @Override
+    public boolean findByPhone(String phone) {
+        UserExample userExample = new UserExample();
+        userExample.createCriteria().andPhoneEqualTo(phone);
+        List<User> users = userMapper.selectByExample(userExample);
+        if(users.size() ==0){
+            return false;
+        }
+        return true;
     }
 }

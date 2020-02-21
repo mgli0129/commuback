@@ -1,13 +1,15 @@
 package com.mg.community.controller;
 
+import com.mg.community.annotation.UserLoginToken;
+import com.mg.community.common.OutputService;
 import com.mg.community.dto.CommentDTO;
-import com.mg.community.dto.CommentInputDTO;
 import com.mg.community.dto.QuestionDTO;
 import com.mg.community.dto.ResultDTO;
 import com.mg.community.enums.CommentTypeEnum;
-import com.mg.community.exception.CustomizeErrorCode;
+import com.mg.community.exception.CommunityErrorCode;
 import com.mg.community.model.Comment;
 import com.mg.community.model.User;
+import com.mg.community.service.AuthenticationService;
 import com.mg.community.service.CommentService;
 import com.mg.community.service.QuestionService;
 import com.mg.community.util.RedisUtil;
@@ -20,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@CrossOrigin(origins = "http://localhost:8080")
+//@CrossOrigin(origins = "http://localhost:8080")
 @RestController
 public class CommentController {
 
@@ -33,49 +35,71 @@ public class CommentController {
     @Autowired
     private RedisUtil redisUtil;
 
+    @Autowired
+    private OutputService outputService;
+
+    @Autowired
+    private AuthenticationService authenticationService;
+
     /**
      * 回复问题或者评论
-     * @param commentInputDTO
+     * @param parentId
+     * @param content
+     * @param type
      * @param request
      * @return
      */
-    @RequestMapping(value = "/comment", method = RequestMethod.POST)
-    public Object post(@RequestBody CommentInputDTO commentInputDTO,
+    @UserLoginToken
+    @RequestMapping(value = "/api/comment", method = RequestMethod.POST)
+//    public Object post(@RequestBody CommentInputDTO commentInputDTO,
+    public Object post(@RequestParam(value = "parentId") Long parentId,
+                       @RequestParam(value = "content") String content,
+                       @RequestParam(value = "type") int type,
                        HttpServletRequest request) {
         User user = (User) request.getSession().getAttribute("user");
-        if (user == null) {
-            return ResultDTO.errorOf(CustomizeErrorCode.NO_LOGIN);
-        }
-        if (commentInputDTO == null || StringUtils.isBlank(commentInputDTO.getContent())) {
-            return ResultDTO.errorOf(CustomizeErrorCode.CONTENT_IS_EMPTY);
+//        if (user == null) {
+//            return ResultDTO.errorOf(CommunityErrorCode.TOKEN_SESSION_HAS_EXPIRED);
+//        }
+
+        if (StringUtils.isBlank(content)) {
+            return ResultDTO.errorOf(CommunityErrorCode.CONTENT_IS_EMPTY);
         }
         Comment comment = new Comment();
-        comment.setParentId(commentInputDTO.getParentId());
-        comment.setContent(commentInputDTO.getContent());
-        comment.setType(commentInputDTO.getType());
+        comment.setParentId(parentId);
+        comment.setContent(content);
+        comment.setType(type);
         comment.setCommentator(user.getId());
         commentService.createOrUpdate(comment, user);
 
-        //更新Redis中的comments数据
+        //更新Redis中的question和comments数据
         if(redisUtil.testConnection()){
-            QuestionDTO questionDTO = (QuestionDTO) redisUtil.hget(redisUtil.QUESTION, commentInputDTO.getParentId().toString());
-            if(questionDTO != null){
-                List<CommentDTO> comments = commentService.listByTargetId(questionDTO.getId(), CommentTypeEnum.QUESTION.getType());
-                redisUtil.hset(redisUtil.COMMENTS, questionDTO.getId().toString(), comments);
+            QuestionDTO dtoFromDB = questionService.findDTOById(parentId);
+            QuestionDTO dtoFromRedis = (QuestionDTO) redisUtil.hget(redisUtil.QUESTION, parentId.toString());
+            if(dtoFromRedis != null){
+                List<CommentDTO> comments = commentService.listByTargetId(parentId, CommentTypeEnum.QUESTION.getType());
+                //更新Redis上的数据
+                redisUtil.hset(redisUtil.QUESTION, parentId.toString(), dtoFromDB);
+                redisUtil.hset(redisUtil.COMMENTS, parentId.toString(), comments);
             }
         }
 
-        return ResultDTO.okOf();
+        //输出格式测试
+        Map<String, Object> outUni = new HashMap<String, Object>();
+        outUni.put("common", outputService.getCommonOutput(request));
+
+        return ResultDTO.okOf(outUni);
     }
 
-    @RequestMapping(value = "/comment/{id}", method = RequestMethod.GET)
-    public ResultDTO<List<CommentDTO>> comments(@PathVariable("id") Long id) {
+    @RequestMapping(value = "/api/comment/{id}", method = RequestMethod.GET)
+    public Object comments(@PathVariable("id") Long id) {
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();
 
+        CommentDTO commentDTO = commentService.findCommentDTOById(id);
+
         List<CommentDTO> commentDTOS = commentService.listByTargetId(id, CommentTypeEnum.COMMENT.getType());
         outUni.put("comments", commentDTOS);
-        outUni.put("toptitle", "【问题】---MG-COMMUNITY");
+        outUni.put("parentComment", commentDTO);
 
         return ResultDTO.okOf(outUni);
     }

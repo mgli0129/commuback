@@ -2,12 +2,11 @@ package com.mg.community.controller;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.mg.community.dto.CommentDTO;
-import com.mg.community.dto.NotificationDTO;
-import com.mg.community.dto.QuestionDTO;
-import com.mg.community.dto.ResultDTO;
+import com.mg.community.annotation.UserLoginToken;
+import com.mg.community.common.OutputService;
+import com.mg.community.dto.*;
 import com.mg.community.enums.CommentTypeEnum;
-import com.mg.community.exception.CustomizeErrorCode;
+import com.mg.community.exception.CommunityErrorCode;
 import com.mg.community.exception.CustomizeException;
 import com.mg.community.model.Question;
 import com.mg.community.model.User;
@@ -43,8 +42,12 @@ public class QuestionController {
     @Autowired
     private NotificationService notificationService;
 
-    @GetMapping("/question/{id}")
-    public Object question(@PathVariable("id") Long id) {
+    @Autowired
+    private OutputService outputService;
+
+    @GetMapping("/api/question/{id}")
+    public Object question(@PathVariable("id") Long id,
+                           HttpServletRequest request) {
 
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();
@@ -66,8 +69,8 @@ public class QuestionController {
             //从数据库中获取数据
             questionDTO = questionService.findDTOById(id);
             if(questionDTO == null){
-                //Redis和数据库均没有该数据，跑出错误
-                throw new CustomizeException(CustomizeErrorCode.QUESTION_NOT_FOUND);
+                //Redis和数据库均没有该数据，抛出错误
+                throw new CustomizeException(CommunityErrorCode.QUESTION_NOT_FOUND);
             }
             comments = commentService.listByTargetId(id, CommentTypeEnum.QUESTION.getType());
             questionRelated = questionService.findRelatedByTag(questionDTO);
@@ -104,12 +107,13 @@ public class QuestionController {
         outUni.put("question", questionDTO);
         outUni.put("comments", comments);
         outUni.put("questionRelated", questionRelated);
-        outUni.put("toptitle", "【问题】---MG-COMMUNITY");
+        outUni.put("common", outputService.getCommonOutput(request));
 
         return ResultDTO.okOf(outUni);
     }
 
-    @GetMapping("/question/publish")
+    @UserLoginToken
+    @GetMapping("/api/question/publish")
     public Object myQuestion(@RequestParam(value = "pageNum", required = false, defaultValue="1") int pageNum,
                              @RequestParam(required = false, defaultValue="8") int pageSize,
                              @RequestParam(value = "search",required = false) String search,
@@ -132,10 +136,13 @@ public class QuestionController {
         outUni.put("pageInfo", pageInfo);
         outUni.put("search", search);
 
+        outUni.put("common", outputService.getCommonOutput(request));
+
         return ResultDTO.okOf(outUni);
     }
 
-    @GetMapping("/question/reply")
+    @UserLoginToken
+    @GetMapping("/api/question/reply")
     public Object yourLatelyReply(@RequestParam(value = "pageNum", required = false, defaultValue="1") int pageNum,
                            @RequestParam(required = false, defaultValue="8") int pageSize,
                            HttpServletRequest request) {
@@ -152,6 +159,8 @@ public class QuestionController {
 
         outUni.put("notifications", notifications);
         outUni.put("pageInfo", pageInfo);
+
+        outUni.put("common", outputService.getCommonOutput(request));
 
         return ResultDTO.okOf(outUni);
     }

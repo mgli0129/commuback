@@ -8,16 +8,16 @@
                         <!--userId="sa"-->
                         <!--password="123"-->
         <!--/>-->
-        <!--<jdbcConnection driverClass="com.mysql.cj.jdbc.Driver"-->
-                        <!--connectionURL="jdbc:mysql://localhost:3306/mgdb"-->
-                        <!--userId="root"-->
-                        <!--password="wood123"-->
-        <!--/>        -->
         <jdbcConnection driverClass="com.mysql.cj.jdbc.Driver"
-                        connectionURL="jdbc:mysql://192.168.31.196:3306/mgdb"
+                        connectionURL="jdbc:mysql://localhost:3306/mgdb"
                         userId="root"
-                        password="Wood%123"
+                        password="wood123"
         />
+        <!--<jdbcConnection driverClass="com.mysql.cj.jdbc.Driver"-->
+                        <!--connectionURL="jdbc:mysql://192.168.31.196:3306/mgdb"-->
+                        <!--userId="root"-->
+                        <!--password="Wood%123"-->
+        <!--/>-->
 
         <javaModelGenerator targetPackage="com.mg.community.model" targetProject="src/main/java">
             <property name="enableSubPackages" value="true"/>
