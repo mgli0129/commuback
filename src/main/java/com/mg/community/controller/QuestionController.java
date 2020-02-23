@@ -16,6 +16,7 @@ import com.mg.community.service.QuestionService;
 import com.mg.community.util.BaseUtil;
 import com.mg.community.util.RedisUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "http://localhost:8080")
 @Slf4j
@@ -52,32 +54,39 @@ public class QuestionController {
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();
 
-        QuestionDTO questionDTO=null;
-        List<CommentDTO> comments=null;
-        List<QuestionDTO> questionRelated = null;
+        QuestionDTO questionDTO = null;
+        List<CommentDTO> comments = null;
+        List<QuestionRelatedDTO> questionRelated = null;
         Long viewCount = 0L;
 
-        if(redisUtil.testConnection()){
+        if (redisUtil.testConnection()) {
             questionDTO = (QuestionDTO) redisUtil.hget(redisUtil.QUESTION, id.toString());
-            if(questionDTO != null){
+            if (questionDTO != null) {
                 comments = (List<CommentDTO>) redisUtil.hget(redisUtil.COMMENTS, id.toString());
-                questionRelated = (List<QuestionDTO>) redisUtil.hget(redisUtil.QUESTION_RELATED, id.toString());
+                questionRelated = (List<QuestionRelatedDTO>) redisUtil.hget(redisUtil.QUESTION_RELATED, id.toString());
                 log.info("Get question from Redis.........................");
             }
         }
-        if(questionDTO == null){
+        if (questionDTO == null) {
             //从数据库中获取数据
             questionDTO = questionService.findDTOById(id);
-            if(questionDTO == null){
+            if (questionDTO == null) {
                 //Redis和数据库均没有该数据，抛出错误
                 throw new CustomizeException(CommunityErrorCode.QUESTION_NOT_FOUND);
             }
             comments = commentService.listByTargetId(id, CommentTypeEnum.QUESTION.getType());
-            questionRelated = questionService.findRelatedByTag(questionDTO);
+            Question question = new Question();
+            BeanUtils.copyProperties(questionDTO, question);
+            List<Question> questions = questionService.findRelatedByTag(question);
+            questionRelated = questions.stream().map(q -> {
+                QuestionRelatedDTO questionRelatedDTO = new QuestionRelatedDTO();
+                BeanUtils.copyProperties(q, questionRelatedDTO);
+                return questionRelatedDTO;
+            }).collect(Collectors.toList());
             log.info("Get question from Database.........................");
 
             //存入Redis
-            if(redisUtil.testConnection()){
+            if (redisUtil.testConnection()) {
                 redisUtil.hset(redisUtil.QUESTION, id.toString(), questionDTO);
                 redisUtil.hset(redisUtil.COMMENTS, id.toString(), comments);
                 redisUtil.hset(redisUtil.QUESTION_RELATED, id.toString(), questionRelated);
@@ -90,15 +99,15 @@ public class QuestionController {
 
         //点击一次Question将增加一个View
         viewCount = questionDTO.getViewCount();
-        if(redisUtil.testConnection()){
+        if (redisUtil.testConnection()) {
             //更新viewCount
-            if(!redisUtil.hasKey(redisUtil.QUESTION_VIEW_COUNT+id.toString())){
-                redisUtil.set(redisUtil.QUESTION_VIEW_COUNT+id.toString(), viewCount);
+            if (!redisUtil.hasKey(redisUtil.QUESTION_VIEW_COUNT + id.toString())) {
+                redisUtil.set(redisUtil.QUESTION_VIEW_COUNT + id.toString(), viewCount);
                 redisUtil.expire(redisUtil.QUESTION_VIEW_COUNT, redisUtil.QUESTION_VIEW_COUNT_20H, TimeUnit.HOURS);
             }
-            redisUtil.incr(redisUtil.QUESTION_VIEW_COUNT+id.toString(),1L);
-            viewCount = ((Integer) redisUtil.get(redisUtil.QUESTION_VIEW_COUNT+id.toString())).longValue();
-        }else{
+            redisUtil.incr(redisUtil.QUESTION_VIEW_COUNT + id.toString(), 1L);
+            viewCount = ((Integer) redisUtil.get(redisUtil.QUESTION_VIEW_COUNT + id.toString())).longValue();
+        } else {
             questionService.incView(questionService.findById(id));
             viewCount++;
         }
@@ -114,9 +123,9 @@ public class QuestionController {
 
     @UserLoginToken
     @GetMapping("/api/question/publish")
-    public Object myQuestion(@RequestParam(value = "pageNum", required = false, defaultValue="1") int pageNum,
-                             @RequestParam(required = false, defaultValue="8") int pageSize,
-                             @RequestParam(value = "search",required = false) String search,
+    public Object myQuestion(@RequestParam(value = "pageNum", required = false, defaultValue = "1") int pageNum,
+                             @RequestParam(required = false, defaultValue = "8") int pageSize,
+                             @RequestParam(value = "search", required = false) String search,
                              HttpServletRequest request) {
 
         //输出格式测试
@@ -128,7 +137,7 @@ public class QuestionController {
         User user = (User) request.getSession().getAttribute("user");
         //pagehelper分页处理
         PageHelper.startPage(pageNum, pageSize);
-        List<Question> questions = questionService.findQuestionByCreatorOrSearch(user.getId(),searchStr);
+        List<Question> questions = questionService.findQuestionByCreatorOrSearch(user.getId(), searchStr);
         PageInfo<Question> pageInfo = new PageInfo<Question>(questions);
         pageInfo.setList(null);
 
@@ -143,9 +152,9 @@ public class QuestionController {
 
     @UserLoginToken
     @GetMapping("/api/question/reply")
-    public Object yourLatelyReply(@RequestParam(value = "pageNum", required = false, defaultValue="1") int pageNum,
-                           @RequestParam(required = false, defaultValue="8") int pageSize,
-                           HttpServletRequest request) {
+    public Object yourLatelyReply(@RequestParam(value = "pageNum", required = false, defaultValue = "1") int pageNum,
+                                  @RequestParam(required = false, defaultValue = "8") int pageSize,
+                                  HttpServletRequest request) {
 
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();

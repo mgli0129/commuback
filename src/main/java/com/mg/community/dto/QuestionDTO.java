@@ -16,6 +16,6 @@ public class QuestionDTO {
     private Long gmtCreate;
     private Long gmtModified;
     private Long creator;
-    private User user;
+    private BasicUser user;
 
 }

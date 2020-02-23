@@ -51,7 +51,7 @@ public interface QuestionService {
 
     void incComment(Question comment);
 
-    List<QuestionDTO> findRelatedByTag(QuestionDTO questionDTO);
+    List<Question> findRelatedByTag(Question question);
 
     HotTopicDataDTO getHotTopicDatas(Question question);
 }

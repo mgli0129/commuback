@@ -53,7 +53,7 @@ public class UserController {
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();
 
-        User user = userService.findByName(username);
+        User user = userService.findByAccountId(username);
         if (user == null) {
             throw new CustomizeException(CommonErrorCode.LOGIN_INVALID_USER_PASSWORD);
         }
@@ -114,7 +114,7 @@ public class UserController {
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();
 
-        User oldUser = userService.findByName(username);
+        User oldUser = userService.findByAccountId(username);
 
         //用户名已被注册
         if (oldUser != null) {
@@ -139,7 +139,7 @@ public class UserController {
             throw new CustomizeException(CommonErrorCode.USER_CREATE_FAIL);
         }
 
-        User newUser = userService.findByName(username);
+        User newUser = userService.findByAccountId(username);
         request.getSession().setAttribute("user", newUser);
         outUni.put("common", outputService.getCommonOutput(request));
 

@@ -29,6 +29,20 @@
                 <db.url>jdbc:mysql://localhost:3306/mgdb</db.url>
                 <db.user>root</db.user>
                 <db.password>wood123</db.password>
+                <mysql.version>6.0.6</mysql.version>
+            </properties>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+        <profile>
+            <id>sit</id>
+            <properties>
+                <spring.profiles.active>sit</spring.profiles.active>
+                <db.url>jdbc:mysql://192.168.31.196:3306/mgdb</db.url>
+                <db.user>root</db.user>
+                <db.password>Wood%123</db.password>
+                <mysql.version>6.0.6</mysql.version>
             </properties>
             <activation>
                 <activeByDefault>true</activeByDefault>
@@ -38,9 +52,10 @@
             <id>prd</id>
             <properties>
                 <spring.profiles.active>prd</spring.profiles.active>
-                <db.url>jdbc:mysql://192.168.31.196:3306/mgdb</db.url>
-                <db.user>root</db.user>
-                <db.password>Wood%123</db.password>
+                <db.url>jdbc:mysql://rm-wz95d4t3j28xmj309125010.mysql.rds.aliyuncs.com:3306/mgdb</db.url>
+                <db.user>commu</db.user>
+                <db.password>Wood999888#</db.password>
+                <mysql.version>8.0.11</mysql.version>
             </properties>
             <activation>
                 <activeByDefault>true</activeByDefault>
@@ -184,6 +199,11 @@
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
             <version>3.8.3</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>

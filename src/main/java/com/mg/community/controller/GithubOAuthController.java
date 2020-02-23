@@ -75,7 +75,7 @@ public class GithubOAuthController {
 //                user.setToken(token);
                 user.setAvatarUrl(githubUser.getAvatarUrl());
                 userService.createOrUpdate(user);
-                userAcc = userService.findByName(githubUser.getLogin());
+                userAcc = userService.findByAccountId(githubUser.getLogin());
             }/* else {
                 token = userAcc.getToken();
             }*/

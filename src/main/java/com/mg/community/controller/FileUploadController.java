@@ -38,7 +38,7 @@ import java.util.*;
  * @Version 1.0
  */
 
-@CrossOrigin(origins = "http://localhost:8080")
+//@CrossOrigin(origins = "http://localhost:8080")
 @RestController
 @Slf4j
 public class FileUploadController {

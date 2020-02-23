@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Iterator;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @ClassName ViewCountUpdTask
@@ -45,8 +44,10 @@ public class ViewCountUpdTask {
                     long value = ((Integer) redisUtil.get(key)).longValue();
                     String id = key.split("-")[1];
                     Question question = questionService.findById(Long.parseLong(id));
-                    question.setViewCount(value);
-                    questionService.setNewView(question);
+                    if(question!=null){
+                        question.setViewCount(value);
+                        questionService.setNewView(question);
+                    }
                 }
             }
         }

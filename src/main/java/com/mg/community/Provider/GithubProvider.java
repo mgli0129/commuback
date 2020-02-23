@@ -35,9 +35,15 @@ public class GithubProvider {
     public GithubUser getGithubUser(AccessTokenDTO accessTokenDTO) {
 
         OkHttpClient client = new OkHttpClient();
+//        Request request = new Request.Builder()
+//                .url("https://api.github.com/user?access_token="+accessTokenDTO.getCode())
+//                .build();
+        //github修改了api調用方式
         Request request = new Request.Builder()
-                .url("https://api.github.com/user?access_token="+accessTokenDTO.getCode())
+                .url("https://api.github.com/user")
+                .addHeader("Authorization", "token "+accessTokenDTO.getCode())
                 .build();
+
         try {
             Response response = client.newCall(request).execute();
             String str = response.body().string();

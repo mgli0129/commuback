@@ -67,11 +67,12 @@ public class HotTopicsDataCache {
      * 从数据库中获取数据，并存入Redis
      */
     public void genHotTopicData(){
-        if(hotTopicsCache.getHots() == null || hotTopicsCache.getHots().size() == 0){
+        List<String> hots = hotTopicsCache.getHots();
+        if(hots == null || hots.size() == 0){
             return;
         }
         Question question = new Question();
-        hotTopicDataDTOS = hotTopicsCache.getHots().stream().map(h -> {
+        hotTopicDataDTOS = hots.stream().map(h -> {
             question.setTag(h);
             return questionService.getHotTopicDatas(question);
         }).collect(Collectors.toList());
@@ -81,7 +82,7 @@ public class HotTopicsDataCache {
             Map<String, Object> map = hotTopicDataDTOS.stream().collect(Collectors.toMap(HotTopicDataDTO::getTag, (p) -> p));
             redisUtil.del(redisUtil.HOT_TOPIC_STATICS);
             redisUtil.hmset(redisUtil.HOT_TOPIC_STATICS, map);
-            redisUtil.expire(redisUtil.HOT_TOPIC_STATICS, 4l, TimeUnit.HOURS);
+            redisUtil.expire(redisUtil.HOT_TOPIC_STATICS, redisUtil.HOT_TOPIC_STATICS_4H, TimeUnit.HOURS);
         }
     }
 

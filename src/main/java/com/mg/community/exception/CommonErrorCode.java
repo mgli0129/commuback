@@ -30,6 +30,7 @@ public enum CommonErrorCode implements ICustomizeErrorCode{
     USER_PHONE_EXISTED("1000012", "该手机号已被注册"),
     USER_CREATE_FAIL("1000013", "注册用户失败"),
     RSA_ENCRYPT_DEENCRYPT_ERROR("1000014", "验密系统错误"),
+    REDIS_OPERATION_ERROR("1000015", "Redis操作失败"),
 
     ;
 

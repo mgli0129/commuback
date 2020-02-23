@@ -32,8 +32,6 @@ public interface UserService {
      */
     void createOrUpdate(User user);
 
-    User findByName(String username);
-
     List<User> listByIds(List<Long> userIds);
 
     boolean findByPhone(String phone);

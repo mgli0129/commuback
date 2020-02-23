@@ -1,5 +1,6 @@
 package com.mg.community.service.impl;
 
+import com.mg.community.dto.BasicUser;
 import com.mg.community.dto.CommentDTO;
 import com.mg.community.enums.CommentTypeEnum;
 import com.mg.community.enums.NotificationTypeEnum;
@@ -150,7 +151,11 @@ public class CommentServiceImpl implements CommentService {
 
         //获取评论人并转为map
         List<User> users = userService.listByIds(userIds);
-        Map<Long, User> userMap = users.stream().collect(Collectors.toMap(user -> user.getId(), user -> user));
+        Map<Long, BasicUser> userMap = users.stream().collect(Collectors.toMap(u -> u.getId(), u -> {
+            BasicUser basicUser = new BasicUser();
+            BeanUtils.copyProperties(u, basicUser);
+            return basicUser;
+        }));
 
         //转换comment to commentDTO
         List<CommentDTO> commentDTOs = comments.stream().map(comment -> {
@@ -171,7 +176,10 @@ public class CommentServiceImpl implements CommentService {
         if(comments != null){
             CommentDTO commentDTO = new CommentDTO();
             BeanUtils.copyProperties(comments.get(0), commentDTO);
-            commentDTO.setUser(userService.findById(comments.get(0).getCommentator()));
+            User user = userService.findById(comments.get(0).getCommentator());
+            BasicUser basicUser = new BasicUser();
+            BeanUtils.copyProperties(user, basicUser);
+            commentDTO.setUser(basicUser);
             return commentDTO;
         }else {
             throw new CustomizeException(CommunityErrorCode.COMMENT_NOT_FOUND);

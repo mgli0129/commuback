@@ -1,5 +1,6 @@
 package com.mg.community.service.impl;
 
+import com.mg.community.dto.BasicUser;
 import com.mg.community.dto.HotTopicDataDTO;
 import com.mg.community.dto.QuestionDTO;
 import com.mg.community.mapper.QuestionExtMapper;
@@ -62,7 +63,9 @@ public class QuestionServiceImpl implements QuestionService {
             //copy object
             BeanUtils.copyProperties(q, questionDTO);
             User user = userService.findById(q.getCreator());
-            questionDTO.setUser(user);
+            BasicUser basicUser = new BasicUser();
+            BeanUtils.copyProperties(user, basicUser);
+            questionDTO.setUser(basicUser);
             return questionDTO;
         }).collect(Collectors.toList());
 
@@ -87,7 +90,9 @@ public class QuestionServiceImpl implements QuestionService {
         //copy object
         BeanUtils.copyProperties(question, questionDTO);
         User user = userService.findById(question.getCreator());
-        questionDTO.setUser(user);
+        BasicUser basicUser = new BasicUser();
+        BeanUtils.copyProperties(user, basicUser);
+        questionDTO.setUser(basicUser);
         return questionDTO;
     }
 
@@ -141,22 +146,17 @@ public class QuestionServiceImpl implements QuestionService {
     }
 
     @Override
-    public List<QuestionDTO> findRelatedByTag(QuestionDTO qdto) {
-        if (qdto == null || StringUtils.isBlank(qdto.getTag())) {
+    public List<Question> findRelatedByTag(Question q) {
+        if (q == null || StringUtils.isBlank(q.getTag())) {
             return new ArrayList<>();
         }
-        String[] tags = StringUtils.split(qdto.getTag(), ",");
+        String[] tags = StringUtils.split(q.getTag(), ",");
         String regexpTag = Arrays.stream(tags).collect(Collectors.joining("|"));
         Question question = new Question();
-        question.setId(qdto.getId());
+        question.setId(q.getId());
         question.setTag(regexpTag);
         List<Question> questions = questionExtMapper.selectRelatedByTag(question);
-        List<QuestionDTO> questionDTOS = questions.stream().map(q -> {
-            QuestionDTO questionDTO = new QuestionDTO();
-            BeanUtils.copyProperties(q, questionDTO);
-            return questionDTO;
-        }).collect(Collectors.toList());
-        return questionDTOS;
+        return questions;
     }
 
     @Override

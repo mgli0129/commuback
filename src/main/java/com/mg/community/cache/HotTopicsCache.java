@@ -1,6 +1,7 @@
 package com.mg.community.cache;
 
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.mg.community.dto.PriorityDTO;
 import com.mg.community.model.Question;
 import com.mg.community.service.QuestionService;
@@ -85,7 +86,7 @@ public class HotTopicsCache {
 
     public List<String> getHots() {
         if (redisUtil.testConnection()) {
-            if(!redisUtil.hasKey(redisUtil.HOT_TOPIC)){
+            if (!redisUtil.hasKey(redisUtil.HOT_TOPIC)) {
                 //手动获取一次数据
                 genHotTopics();
             }
@@ -100,7 +101,7 @@ public class HotTopicsCache {
 
     public void genHotTopics() {
 
-        int offSet = 0;
+        int offSet = 1;
         int limit = 5;
         List<Question> questions = new ArrayList<>();
         Map<String, Long> priorities = new HashMap<>();
@@ -109,7 +110,15 @@ public class HotTopicsCache {
         log.info("getHotTopics start: {}", new Date());
 
         //得到标签和权值的无序的Map
-        while (offSet == 0 || questions.size() == 5) {
+        /*
+           ***使用PageHelper后，在数据量刚好是5的倍数时，出现死循环***
+           * 原因是最后一次执行PageHelper.startPage(offSet, limit)后，question已经没有数据了，再次执行startPage时，
+           * 会自动的保留最后一次的数据，满足有5条数据，因此，出现死循环；
+         */
+        //总页数
+        int pages = 0;
+        PageInfo<Question> pageInfo = null;
+        while (offSet == 1 || questions.size() == 5) {
             PageHelper.startPage(offSet, limit);
             questions = questionService.findAllBySearch(null);
             for (Question question : questions) {
@@ -122,6 +131,21 @@ public class HotTopicsCache {
                         priorities.put(tag, 5 + question.getCommentCount());
                     }
                 }
+            }
+
+            //只统计一次
+            if (offSet == 1) {
+                pageInfo = new PageInfo<Question>(questions);
+                pages = pageInfo.getPages();
+            }
+            for (Question question : questions) {
+                log.info("Current ID: " + question.getId());
+            }
+            log.info("offSet=" + offSet + "-------pages=" + pages);
+            //如果在最后一次翻页获取数据后不退出，startPage会保留最后一次的记录，无限循环;
+            //如果没有数据，也退出循环
+            if (offSet == pages || pages == 0) {
+                break;
             }
             offSet++;
         }
