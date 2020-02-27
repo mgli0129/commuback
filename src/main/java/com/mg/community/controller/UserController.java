@@ -7,6 +7,8 @@ import com.mg.community.dto.ResultDTO;
 import com.mg.community.exception.CommonErrorCode;
 import com.mg.community.exception.CustomizeException;
 import com.mg.community.model.User;
+import com.mg.community.service.AuthenticationService;
+import com.mg.community.service.RSAEnDecryptService;
 import com.mg.community.service.UserService;
 import com.mg.community.util.RSAUtil;
 import com.mg.community.util.RedisUtil;
@@ -22,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @ClassName UserController
@@ -43,6 +46,12 @@ public class UserController {
     @Autowired
     private RedisUtil redisUtil;
 
+    @Autowired
+    private AuthenticationService authenticationService;
+
+    @Autowired
+    private RSAEnDecryptService rsaEnDecryptService;
+
     @PassToken
     @PostMapping("/api/user/login")
     public Object login(
@@ -59,7 +68,7 @@ public class UserController {
         }
         String dbPassword = user.getPwd();
         try {
-            String privateKey = (String) redisUtil.get(RedisUtil.RSA_PRIVATE_KEY);
+            String privateKey = rsaEnDecryptService.getPrivateKey();
             String inputDecryptData = RSAUtil.decrypt(password,
                     RSAUtil.getPrivateKey(privateKey));
             String dbDecryptData = RSAUtil.decrypt(dbPassword,
@@ -68,23 +77,23 @@ public class UserController {
                 throw new CustomizeException(CommonErrorCode.LOGIN_INVALID_USER_PASSWORD);
             }
         } catch (Exception e) {
-            if(e instanceof IllegalArgumentException){
+            if (e instanceof IllegalArgumentException) {
                 throw new CustomizeException(CommonErrorCode.LOGIN_INVALID_USER_PASSWORD);
-            }else {
+            } else {
                 throw new CustomizeException(CommonErrorCode.RSA_ENCRYPT_DEENCRYPT_ERROR);
             }
         }
 
         //写入cookie
-//        Cookie cookie = new Cookie("token", user.getToken());
+//        Cookie cookie = new Cookie("token", user.genToken());
 //        cookie.setPath("/");
 //        response.addCookie(cookie);
 
         //使用jwt替换上面cookie-session方式操作token
         //登录成功，在session里保存user信息
-        request.getSession().setAttribute("user", user);
+        String token = authenticationService.tokenProcess(request, user);
 
-        outUni.put("common", outputService.getCommonOutput(request));
+        outUni.put("common", outputService.getCommonOutput(request, token));
 
         return ResultDTO.okOf(outUni);
     }
@@ -93,7 +102,9 @@ public class UserController {
     @GetMapping("/api/user/logout")
     public Object logout(HttpServletRequest request,
                          HttpServletResponse response) {
-        request.getSession().removeAttribute("user");
+
+        authenticationService.delToken(request);
+
 //        Cookie cookie = new Cookie("token", null);
 //        cookie.setMaxAge(0);
 //        response.addCookie(cookie);
@@ -140,8 +151,8 @@ public class UserController {
         }
 
         User newUser = userService.findByAccountId(username);
-        request.getSession().setAttribute("user", newUser);
-        outUni.put("common", outputService.getCommonOutput(request));
+        String token = authenticationService.tokenProcess(request, newUser);
+        outUni.put("common", outputService.getCommonOutput(request, token));
 
         return ResultDTO.okOf(outUni);
     }

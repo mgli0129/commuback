@@ -64,7 +64,7 @@ public class PublishController {
         outUni.put("id", id);
         outUni.put("selectTags", TagCache.getHotTags());
 
-        outUni.put("common", outputService.getCommonOutput(request));
+        outUni.put("common", outputService.getCommonOutput(request, null));
 
         return ResultDTO.okOf(outUni);
     }
@@ -75,7 +75,7 @@ public class PublishController {
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();
         outUni.put("selectTags", TagCache.getHotTags());
-        outUni.put("common", outputService.getCommonOutput(request));
+        outUni.put("common", outputService.getCommonOutput(request, null));
         return ResultDTO.okOf(outUni);
     }
 
@@ -149,7 +149,7 @@ public class PublishController {
             //是否需要更新相关问题，此部分暂不考虑，因为相关问题一天更新一次也是可以的；
         }
 
-        outUni.put("common", outputService.getCommonOutput(request));
+        outUni.put("common", outputService.getCommonOutput(request, null));
 
         return ResultDTO.okOf(outUni);
     }

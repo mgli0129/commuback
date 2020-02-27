@@ -8,6 +8,7 @@ import com.mg.community.dto.ResultDTO;
 import com.mg.community.exception.CommonErrorCode;
 import com.mg.community.exception.CustomizeException;
 import com.mg.community.model.User;
+import com.mg.community.service.AuthenticationService;
 import com.mg.community.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +33,10 @@ public class GithubOAuthController {
 
     @Autowired
     private OutputService outputService;
+
+
+    @Autowired
+    private AuthenticationService authenticationService;
 
     @Value("${github.client.id}")
     private String githubClientId;
@@ -77,7 +82,7 @@ public class GithubOAuthController {
                 userService.createOrUpdate(user);
                 userAcc = userService.findByAccountId(githubUser.getLogin());
             }/* else {
-                token = userAcc.getToken();
+                token = userAcc.genToken();
             }*/
             //写入cookie
 //            Cookie cookie = new Cookie("token", token);
@@ -85,11 +90,10 @@ public class GithubOAuthController {
 //            response.addCookie(cookie);
 
             //登录成功，在session里保存user信息
-            request.getSession().setAttribute("user", userAcc);
-
+            String token = authenticationService.tokenProcess(request, userAcc);
             //输出格式测试
             Map<String, Object> outUni = new HashMap<String, Object>();
-            outUni.put("common", outputService.getCommonOutput(request));
+            outUni.put("common", outputService.getCommonOutput(request, token));
 
             return ResultDTO.okOf(outUni);
         } else {

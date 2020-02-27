@@ -116,7 +116,7 @@ public class QuestionController {
         outUni.put("question", questionDTO);
         outUni.put("comments", comments);
         outUni.put("questionRelated", questionRelated);
-        outUni.put("common", outputService.getCommonOutput(request));
+        outUni.put("common", outputService.getCommonOutput(request, null));
 
         return ResultDTO.okOf(outUni);
     }
@@ -145,7 +145,7 @@ public class QuestionController {
         outUni.put("pageInfo", pageInfo);
         outUni.put("search", search);
 
-        outUni.put("common", outputService.getCommonOutput(request));
+        outUni.put("common", outputService.getCommonOutput(request, null));
 
         return ResultDTO.okOf(outUni);
     }
@@ -169,7 +169,7 @@ public class QuestionController {
         outUni.put("notifications", notifications);
         outUni.put("pageInfo", pageInfo);
 
-        outUni.put("common", outputService.getCommonOutput(request));
+        outUni.put("common", outputService.getCommonOutput(request, null));
 
         return ResultDTO.okOf(outUni);
     }

@@ -116,7 +116,7 @@ public class HotTopicsController {
         outUni.put("tabs", HotTabCache.getHotTopicTabs());
         outUni.put("id", id);
         outUni.put("tagUsers", tagUsers);
-        outUni.put("common", outputService.getCommonOutput(request));
+        outUni.put("common", outputService.getCommonOutput(request, null));
 
         return ResultDTO.okOf(outUni);
     }

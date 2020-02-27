@@ -34,6 +34,9 @@ public interface RedisConst {
     //token-key
     public final static String TOKEN = "token-";
 
+    //sessionUser-key
+    public final static String SESSION_USER = "session_user-";
+
     //获取公钥的key
     public final static String RSA_PUBLIC_KEY = "RSAPublicKey";
 
@@ -57,7 +60,7 @@ public interface RedisConst {
     //阅读数-20h（需要在question的自动删除时间内及时更新至数据库）
     public final static Long QUESTION_VIEW_COUNT_20H = 20L;
     //Token-24h
-    public final static Long TOKEN_24H = 24L;
+    public final static Long TOKEN_EXPIRE_TIME = 30L;
 
     /***********************************************************************************/
 

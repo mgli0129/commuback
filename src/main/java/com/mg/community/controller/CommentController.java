@@ -43,6 +43,7 @@ public class CommentController {
 
     /**
      * 回复问题或者评论
+     *
      * @param parentId
      * @param content
      * @param type
@@ -56,10 +57,7 @@ public class CommentController {
                        @RequestParam(value = "content") String content,
                        @RequestParam(value = "type") int type,
                        HttpServletRequest request) {
-        User user = (User) request.getSession().getAttribute("user");
-//        if (user == null) {
-//            return ResultDTO.errorOf(CommunityErrorCode.TOKEN_SESSION_HAS_EXPIRED);
-//        }
+        User sessionUserByRequest = authenticationService.getSessionUserByRequest(request);
 
         if (StringUtils.isBlank(content)) {
             return ResultDTO.errorOf(CommunityErrorCode.CONTENT_IS_EMPTY);
@@ -68,24 +66,22 @@ public class CommentController {
         comment.setParentId(parentId);
         comment.setContent(content);
         comment.setType(type);
-        comment.setCommentator(user.getId());
-        commentService.createOrUpdate(comment, user);
+        comment.setCommentator(sessionUserByRequest.getId());
+        commentService.createOrUpdate(comment, sessionUserByRequest);
 
         //更新Redis中的question和comments数据
-        if(redisUtil.testConnection()){
-            QuestionDTO dtoFromDB = questionService.findDTOById(parentId);
-            QuestionDTO dtoFromRedis = (QuestionDTO) redisUtil.hget(redisUtil.QUESTION, parentId.toString());
-            if(dtoFromRedis != null){
-                List<CommentDTO> comments = commentService.listByTargetId(parentId, CommentTypeEnum.QUESTION.getType());
-                //更新Redis上的数据
-                redisUtil.hset(redisUtil.QUESTION, parentId.toString(), dtoFromDB);
-                redisUtil.hset(redisUtil.COMMENTS, parentId.toString(), comments);
-            }
+        QuestionDTO dtoFromDB = questionService.findDTOById(parentId);
+        QuestionDTO dtoFromRedis = (QuestionDTO) redisUtil.hget(redisUtil.QUESTION, parentId.toString());
+        if (dtoFromRedis != null) {
+            List<CommentDTO> comments = commentService.listByTargetId(parentId, CommentTypeEnum.QUESTION.getType());
+            //更新Redis上的数据
+            redisUtil.hset(redisUtil.QUESTION, parentId.toString(), dtoFromDB);
+            redisUtil.hset(redisUtil.COMMENTS, parentId.toString(), comments);
         }
 
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();
-        outUni.put("common", outputService.getCommonOutput(request));
+        outUni.put("common", outputService.getCommonOutput(request, null));
 
         return ResultDTO.okOf(outUni);
     }

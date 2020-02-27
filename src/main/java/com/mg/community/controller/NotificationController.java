@@ -37,7 +37,7 @@ public class NotificationController {
             //输出格式测试
             Map<String, Object> outUni = new HashMap<String, Object>();
             outUni.put("id", notification.getQuestionid());
-            outUni.put("common", outputService.getCommonOutput(request));
+            outUni.put("common", outputService.getCommonOutput(request, null));
             return ResultDTO.okOf(outUni);
         }else{
             throw new CustomizeException(CommunityErrorCode.TYPE_PARAM_NOT_FOUND);
@@ -56,7 +56,7 @@ public class NotificationController {
 
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();
-        outUni.put("common", outputService.getCommonOutput(request));
+        outUni.put("common", outputService.getCommonOutput(request, null));
 
         return ResultDTO.okOf(outUni);
     }

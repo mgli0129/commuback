@@ -31,6 +31,7 @@ public enum CommonErrorCode implements ICustomizeErrorCode{
     USER_CREATE_FAIL("1000013", "注册用户失败"),
     RSA_ENCRYPT_DEENCRYPT_ERROR("1000014", "验密系统错误"),
     REDIS_OPERATION_ERROR("1000015", "Redis操作失败"),
+    TOKEN_GENERATED_FAIL("1000016", "Token生成失败，请重试"),
 
     ;
 

@@ -60,7 +60,7 @@ public class IndexController {
 
         outUni.put("questions", questionDTOs);
         outUni.put("pageInfo", pageInfo);
-        outUni.put("common", outputService.getCommonOutput(request));
+        outUni.put("common", outputService.getCommonOutput(request, null));
         outUni.put("search", search);
         outUni.put("hotTopics", hotTopics);
 

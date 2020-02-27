@@ -31,6 +31,7 @@ public class RSAEnDecryptService {
 
     /**
      * 获取RSA公钥
+     *
      * @return
      */
     public String getPublicKey() {
@@ -79,4 +80,32 @@ public class RSAEnDecryptService {
         }
         return publicKey;
     }
+
+    /**
+     * 获取RSA私钥
+     *
+     * @return
+     */
+    public String getPrivateKey() {
+        String privateKey = null;
+        if (redisUtil.testConnection()) {
+            privateKey = (String) redisUtil.get(RedisUtil.RSA_PRIVATE_KEY);
+            //Redis不存在
+            if (StringUtils.isEmpty(privateKey)) {
+                //从数据库读取
+                privateKey = sysparamService.findRSAPrivateKey();
+                if (StringUtils.isEmpty(privateKey)) {
+                    throw new CustomizeException(CommonErrorCode.SYSTEM_RSA_ERROR);
+                }
+            }
+        } else {
+            //从数据库读取
+            privateKey = sysparamService.findRSAPrivateKey();
+            if (StringUtils.isEmpty(privateKey)) {
+                throw new CustomizeException(CommonErrorCode.SYSTEM_RSA_ERROR);
+            }
+        }
+        return privateKey;
+    }
 }
+
