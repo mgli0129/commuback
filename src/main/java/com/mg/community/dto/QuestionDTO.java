@@ -1,6 +1,5 @@
 package com.mg.community.dto;
 
-import com.mg.community.model.User;
 import lombok.Data;
 
 @Data

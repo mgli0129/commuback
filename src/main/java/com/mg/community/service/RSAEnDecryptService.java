@@ -88,17 +88,9 @@ public class RSAEnDecryptService {
      */
     public String getPrivateKey() {
         String privateKey = null;
-        if (redisUtil.testConnection()) {
-            privateKey = (String) redisUtil.get(RedisUtil.RSA_PRIVATE_KEY);
-            //Redis不存在
-            if (StringUtils.isEmpty(privateKey)) {
-                //从数据库读取
-                privateKey = sysparamService.findRSAPrivateKey();
-                if (StringUtils.isEmpty(privateKey)) {
-                    throw new CustomizeException(CommonErrorCode.SYSTEM_RSA_ERROR);
-                }
-            }
-        } else {
+        privateKey = (String) redisUtil.get(RedisUtil.RSA_PRIVATE_KEY);
+        //Redis不存在
+        if (StringUtils.isEmpty(privateKey)) {
             //从数据库读取
             privateKey = sysparamService.findRSAPrivateKey();
             if (StringUtils.isEmpty(privateKey)) {
