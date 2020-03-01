@@ -74,29 +74,27 @@ public class HotTopicsCache {
         /*
             增加redis操作
          */
-        if (redisUtil.testConnection()) {
-            //存入redis数据库
-            redisUtil.del(RedisUtil.HOT_TOPIC);
-            redisUtil.lSet(RedisUtil.HOT_TOPIC, sortedPros);
-        } else {
-            //保存在本地内存
-            hots = sortedPros;
-        }
+        //存入redis数据库
+        redisUtil.del(RedisUtil.HOT_TOPIC);
+        redisUtil.lSet(RedisUtil.HOT_TOPIC, sortedPros);
+        //保存在本地内存
+        hots = sortedPros;
     }
 
     public List<String> getHots() {
-        if (redisUtil.testConnection()) {
-            if (!redisUtil.hasKey(redisUtil.HOT_TOPIC)) {
-                //手动获取一次数据
-                genHotTopics();
-            }
-            List<String> list = (List) redisUtil.lGet(RedisUtil.HOT_TOPIC, 0, -1).get(0);
-            log.info("hottopic got from redis......");
-            return list;
-        } else {
-            log.info("hottopic got from local memory......");
+
+        //优先返回本地内存
+        if (!hots.isEmpty()) {
             return hots;
         }
+        //从Redis中取
+        if (!redisUtil.hasKey(redisUtil.HOT_TOPIC)) {
+            //手动获取一次数据
+            genHotTopics();
+        }
+        log.info("hottopic got from redis......");
+        return (List) redisUtil.lGet(RedisUtil.HOT_TOPIC, 0, -1).get(0);
+
     }
 
     public void genHotTopics() {
@@ -111,9 +109,9 @@ public class HotTopicsCache {
 
         //得到标签和权值的无序的Map
         /*
-           ***使用PageHelper后，在数据量刚好是5的倍数时，出现死循环***
-           * 原因是最后一次执行PageHelper.startPage(offSet, limit)后，question已经没有数据了，再次执行startPage时，
-           * 会自动的保留最后一次的数据，满足有5条数据，因此，出现死循环；
+         ***使用PageHelper后，在数据量刚好是5的倍数时，出现死循环***
+         * 原因是最后一次执行PageHelper.startPage(offSet, limit)后，question已经没有数据了，再次执行startPage时，
+         * 会自动的保留最后一次的数据，满足有5条数据，因此，出现死循环；
          */
         //总页数
         int pages = 0;

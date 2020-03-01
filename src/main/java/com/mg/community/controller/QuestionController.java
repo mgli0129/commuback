@@ -10,6 +10,7 @@ import com.mg.community.exception.CommunityErrorCode;
 import com.mg.community.exception.CustomizeException;
 import com.mg.community.model.Question;
 import com.mg.community.model.User;
+import com.mg.community.service.AuthenticationService;
 import com.mg.community.service.CommentService;
 import com.mg.community.service.NotificationService;
 import com.mg.community.service.QuestionService;
@@ -47,6 +48,9 @@ public class QuestionController {
     @Autowired
     private OutputService outputService;
 
+    @Autowired
+    private AuthenticationService authenticationService;
+
     @GetMapping("/api/question/{id}")
     public Object question(@PathVariable("id") Long id,
                            HttpServletRequest request) {
@@ -59,15 +63,12 @@ public class QuestionController {
         List<QuestionRelatedDTO> questionRelated = null;
         Long viewCount = 0L;
 
-        if (redisUtil.testConnection()) {
-            questionDTO = (QuestionDTO) redisUtil.hget(redisUtil.QUESTION, id.toString());
-            if (questionDTO != null) {
-                comments = (List<CommentDTO>) redisUtil.hget(redisUtil.COMMENTS, id.toString());
-                questionRelated = (List<QuestionRelatedDTO>) redisUtil.hget(redisUtil.QUESTION_RELATED, id.toString());
-                log.info("Get question from Redis.........................");
-            }
-        }
-        if (questionDTO == null) {
+        questionDTO = (QuestionDTO) redisUtil.hget(redisUtil.QUESTION, id.toString());
+        if (questionDTO != null) {
+            comments = (List<CommentDTO>) redisUtil.hget(redisUtil.COMMENTS, id.toString());
+            questionRelated = (List<QuestionRelatedDTO>) redisUtil.hget(redisUtil.QUESTION_RELATED, id.toString());
+            log.info("Get question from Redis.........................");
+        } else {
             //从数据库中获取数据
             questionDTO = questionService.findDTOById(id);
             if (questionDTO == null) {
@@ -86,31 +87,21 @@ public class QuestionController {
             log.info("Get question from Database.........................");
 
             //存入Redis
-            if (redisUtil.testConnection()) {
-                redisUtil.hset(redisUtil.QUESTION, id.toString(), questionDTO);
-                redisUtil.hset(redisUtil.COMMENTS, id.toString(), comments);
-                redisUtil.hset(redisUtil.QUESTION_RELATED, id.toString(), questionRelated);
-                //设置过期时间
-//                redisUtil.expire(redisUtil.QUESTION, redisUtil.QUESTION_24H, TimeUnit.HOURS);
-//                redisUtil.expire(redisUtil.COMMENTS, redisUtil.QUESTION_24H, TimeUnit.HOURS);
-//                redisUtil.expire(redisUtil.QUESTION_RELATED, redisUtil.QUESTION_24H, TimeUnit.HOURS);
-            }
+            redisUtil.hset(redisUtil.QUESTION, id.toString(), questionDTO);
+            redisUtil.hset(redisUtil.COMMENTS, id.toString(), comments);
+            redisUtil.hset(redisUtil.QUESTION_RELATED, id.toString(), questionRelated);
         }
 
         //点击一次Question将增加一个View
         viewCount = questionDTO.getViewCount();
-        if (redisUtil.testConnection()) {
-            //更新viewCount
-            if (!redisUtil.hasKey(redisUtil.QUESTION_VIEW_COUNT + id.toString())) {
-                redisUtil.set(redisUtil.QUESTION_VIEW_COUNT + id.toString(), viewCount);
-                redisUtil.expire(redisUtil.QUESTION_VIEW_COUNT, redisUtil.QUESTION_VIEW_COUNT_20H, TimeUnit.HOURS);
-            }
-            redisUtil.incr(redisUtil.QUESTION_VIEW_COUNT + id.toString(), 1L);
-            viewCount = ((Integer) redisUtil.get(redisUtil.QUESTION_VIEW_COUNT + id.toString())).longValue();
-        } else {
-            questionService.incView(questionService.findById(id));
-            viewCount++;
+        //更新viewCount
+        if (!redisUtil.hasKey(redisUtil.QUESTION_VIEW_COUNT + id.toString())) {
+            redisUtil.set(redisUtil.QUESTION_VIEW_COUNT + id.toString(), viewCount);
+            redisUtil.expire(redisUtil.QUESTION_VIEW_COUNT, redisUtil.QUESTION_VIEW_COUNT_20H, TimeUnit.HOURS);
         }
+        redisUtil.incr(redisUtil.QUESTION_VIEW_COUNT + id.toString(), 1L);
+        viewCount = ((Integer) redisUtil.get(redisUtil.QUESTION_VIEW_COUNT + id.toString())).longValue();
+
         questionDTO.setViewCount(viewCount);
 
         outUni.put("question", questionDTO);
@@ -134,10 +125,10 @@ public class QuestionController {
         //使用“|”分割输入的多个搜索名字
         String searchStr = BaseUtil.seachItemOptimized(search);
 
-        User user = (User) request.getSession().getAttribute("user");
+        User sessionUserByRequest = authenticationService.getSessionUserByRequest(request);
         //pagehelper分页处理
         PageHelper.startPage(pageNum, pageSize);
-        List<Question> questions = questionService.findQuestionByCreatorOrSearch(user.getId(), searchStr);
+        List<Question> questions = questionService.findQuestionByCreatorOrSearch(sessionUserByRequest.getId(), searchStr);
         PageInfo<Question> pageInfo = new PageInfo<Question>(questions);
         pageInfo.setList(null);
 
@@ -159,10 +150,10 @@ public class QuestionController {
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();
 
-        User user = (User) request.getSession().getAttribute("user");
+        User sessionUserByRequest = authenticationService.getSessionUserByRequest(request);
         //pagehelper分页处理
         PageHelper.startPage(pageNum, pageSize);
-        List<NotificationDTO> notifications = notificationService.findNotificationByReceiver(user.getId());
+        List<NotificationDTO> notifications = notificationService.findNotificationByReceiver(sessionUserByRequest.getId());
         PageInfo<NotificationDTO> pageInfo = new PageInfo<NotificationDTO>(notifications);
         pageInfo.setList(null);
 

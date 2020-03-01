@@ -36,32 +36,30 @@ public class AutoSyncQuestionRelatedTask {
 
     /**
      * 自动更新Redis已存的问题相关内容；
-     * 没fixedRate更新一次
+     * 每fixedRate更新一次
      */
     @Scheduled(fixedRate = 1000 * 60 * 60 * 20)
     public void autoSyncQuestionRelated() {
         log.info("Auto sync question related to redis --- start.............");
-        if (redisUtil.testConnection()) {
 
-            Map<String, Object> newRelateds = new HashMap<>();
-            Map<Object, Object> qRelateds = redisUtil.hmget(redisUtil.QUESTION_RELATED);
-            for (Map.Entry<Object, Object> entry : qRelateds.entrySet()) {
-                Long id = (Long.parseLong((String) entry.getKey()));
-                Question question = questionService.findById(id);
-                List<Question> questions = questionService.findRelatedByTag(question);
-                List<QuestionRelatedDTO> questionRelatedDTOS = questions.stream().map(q -> {
-                    QuestionRelatedDTO questionRelatedDTO = new QuestionRelatedDTO();
-                    BeanUtils.copyProperties(q, questionRelatedDTO);
-                    return questionRelatedDTO;
-                }).collect(Collectors.toList());
-                newRelateds.put(id.toString(), questionRelatedDTOS);
-            }
-            if (newRelateds != null) {
-                try {
-                    redisUtil.hmset(redisUtil.QUESTION_RELATED, newRelateds);
-                } catch (Exception e) {
-                    throw new CustomizeException(CommonErrorCode.REDIS_OPERATION_ERROR);
-                }
+        Map<String, Object> newRelateds = new HashMap<>();
+        Map<Object, Object> qRelateds = redisUtil.hmget(redisUtil.QUESTION_RELATED);
+        for (Map.Entry<Object, Object> entry : qRelateds.entrySet()) {
+            Long id = (Long.parseLong((String) entry.getKey()));
+            Question question = questionService.findById(id);
+            List<Question> questions = questionService.findRelatedByTag(question);
+            List<QuestionRelatedDTO> questionRelatedDTOS = questions.stream().map(q -> {
+                QuestionRelatedDTO questionRelatedDTO = new QuestionRelatedDTO();
+                BeanUtils.copyProperties(q, questionRelatedDTO);
+                return questionRelatedDTO;
+            }).collect(Collectors.toList());
+            newRelateds.put(id.toString(), questionRelatedDTOS);
+        }
+        if (newRelateds != null) {
+            try {
+                redisUtil.hmset(redisUtil.QUESTION_RELATED, newRelateds);
+            } catch (Exception e) {
+                throw new CustomizeException(CommonErrorCode.REDIS_OPERATION_ERROR);
             }
         }
         log.info("Auto sync question related to redis --- end.............");

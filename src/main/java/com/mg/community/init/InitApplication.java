@@ -33,11 +33,9 @@ public class InitApplication implements CommandLineRunner {
      * 初始化Redis keys过期时间
      */
     public void redisKeysExpired() {
-        if (redisUtil.testConnection()) {
-            redisUtil.expire(redisUtil.QUESTION, redisUtil.QUESTION_24H, TimeUnit.HOURS);
-            redisUtil.expire(redisUtil.COMMENTS, redisUtil.QUESTION_24H, TimeUnit.HOURS);
-            redisUtil.expire(redisUtil.QUESTION_RELATED, redisUtil.QUESTION_24H, TimeUnit.HOURS);
-            log.info("set redis keys expire time............");
-        }
+        redisUtil.expire(redisUtil.QUESTION, redisUtil.QUESTION_24H, TimeUnit.HOURS);
+        redisUtil.expire(redisUtil.COMMENTS, redisUtil.QUESTION_24H, TimeUnit.HOURS);
+        redisUtil.expire(redisUtil.QUESTION_RELATED, redisUtil.QUESTION_24H, TimeUnit.HOURS);
+        log.info("set redis keys expire time............");
     }
 }

@@ -42,33 +42,31 @@ public class HotTopicsDataCache {
     /**
      * 获取所有热门话题的统计信息
      */
-    public void getDatas(){
+    public void getDatas() {
         //先从Redis中获取
-        if(redisUtil.testConnection()){
-            if(redisUtil.hasKey(redisUtil.HOT_TOPIC_STATICS)){
-                Map<Object, Object> hmget = redisUtil.hmget(redisUtil.HOT_TOPIC_STATICS);
-                if(hmget != null){
-                    //Redis中存在
-                    System.out.println("从Redis 中获取hash");
-                    hotTopicDataDTOS = (List) hmget.values().stream().collect(Collectors.toList());
+        if (redisUtil.hasKey(redisUtil.HOT_TOPIC_STATICS)) {
+            Map<Object, Object> hmget = redisUtil.hmget(redisUtil.HOT_TOPIC_STATICS);
+            if (hmget != null) {
+                //Redis中存在
+                System.out.println("从Redis 中获取hash");
+                hotTopicDataDTOS = (List) hmget.values().stream().collect(Collectors.toList());
 
-                }else{
-                    //从数据库中取
-                    genHotTopicData();
-                }
-            }else{
-                System.out.println("从数据库中获取数据");
+            } else {
+                //从数据库中取
                 genHotTopicData();
             }
+        } else {
+            System.out.println("从数据库中获取数据");
+            genHotTopicData();
         }
     }
 
     /**
      * 从数据库中获取数据，并存入Redis
      */
-    public void genHotTopicData(){
+    public void genHotTopicData() {
         List<String> hots = hotTopicsCache.getHots();
-        if(hots == null || hots.size() == 0){
+        if (hots == null || hots.size() == 0) {
             return;
         }
         Question question = new Question();
@@ -78,27 +76,26 @@ public class HotTopicsDataCache {
         }).collect(Collectors.toList());
 
         //通过hash存入Redis
-        if(redisUtil.testConnection()) {
-            Map<String, Object> map = hotTopicDataDTOS.stream().collect(Collectors.toMap(HotTopicDataDTO::getTag, (p) -> p));
-            redisUtil.del(redisUtil.HOT_TOPIC_STATICS);
-            redisUtil.hmset(redisUtil.HOT_TOPIC_STATICS, map);
-            redisUtil.expire(redisUtil.HOT_TOPIC_STATICS, redisUtil.HOT_TOPIC_STATICS_4H, TimeUnit.HOURS);
-        }
+        Map<String, Object> map = hotTopicDataDTOS.stream().collect(Collectors.toMap(HotTopicDataDTO::getTag, (p) -> p));
+        redisUtil.del(redisUtil.HOT_TOPIC_STATICS);
+        redisUtil.hmset(redisUtil.HOT_TOPIC_STATICS, map);
+        redisUtil.expire(redisUtil.HOT_TOPIC_STATICS, redisUtil.HOT_TOPIC_STATICS_4H, TimeUnit.HOURS);
     }
 
     /**
      * 获取当前访问的热门话题的统计信息
+     *
      * @param tag
      * @return
      */
-    public HotTopicDataDTO getCurrentData(String tag){
-        if(StringUtils.isBlank(tag)){
+    public HotTopicDataDTO getCurrentData(String tag) {
+        if (StringUtils.isBlank(tag)) {
             return null;
         }
         //获取数据集
         getDatas();
 
-        if(hotTopicDataDTOS != null) {
+        if (hotTopicDataDTOS != null) {
             for (HotTopicDataDTO data : hotTopicDataDTOS) {
                 if (data.getTag().equals(tag)) {
                     return data;

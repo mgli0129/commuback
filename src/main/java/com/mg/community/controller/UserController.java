@@ -24,7 +24,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * @ClassName UserController
@@ -42,9 +41,6 @@ public class UserController {
 
     @Autowired
     private OutputService outputService;
-
-    @Autowired
-    private RedisUtil redisUtil;
 
     @Autowired
     private AuthenticationService authenticationService;
@@ -67,12 +63,21 @@ public class UserController {
             throw new CustomizeException(CommonErrorCode.LOGIN_INVALID_USER_PASSWORD);
         }
         String dbPassword = user.getPwd();
+
+        //del
+        System.out.println("db: " + dbPassword);
+
         try {
             String privateKey = rsaEnDecryptService.getPrivateKey();
             String inputDecryptData = RSAUtil.decrypt(password,
                     RSAUtil.getPrivateKey(privateKey));
             String dbDecryptData = RSAUtil.decrypt(dbPassword,
                     RSAUtil.getPrivateKey(privateKey));
+
+            //del
+            System.out.println("decrypt input: " + inputDecryptData);
+            System.out.println("decrypt db: " + dbDecryptData);
+
             if (!StringUtils.equals(dbDecryptData, inputDecryptData)) {
                 throw new CustomizeException(CommonErrorCode.LOGIN_INVALID_USER_PASSWORD);
             }

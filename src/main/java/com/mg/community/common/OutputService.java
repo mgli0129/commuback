@@ -28,14 +28,13 @@ public class OutputService {
 
     //公共输出
     public CommonOutputDTO getCommonOutput(HttpServletRequest request, String token) {
-        User sessionUserByToken = new User();
         if(StringUtils.isBlank(token)){
             token = authenticationService.getTokenByRequest(request);
             if (token == null){
                 return null;
             }
         }
-        sessionUserByToken = authenticationService.getSessionUserByToken(token);
+        User sessionUserByToken = (User) request.getSession().getAttribute(authenticationService.getUserIdByToken(token) + "");
         if(sessionUserByToken == null){
             return null;
         }

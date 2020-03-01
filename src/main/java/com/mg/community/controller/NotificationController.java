@@ -8,6 +8,7 @@ import com.mg.community.exception.CommunityErrorCode;
 import com.mg.community.exception.CustomizeException;
 import com.mg.community.model.Notification;
 import com.mg.community.model.User;
+import com.mg.community.service.AuthenticationService;
 import com.mg.community.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,9 @@ public class NotificationController {
 
     @Autowired
     private NotificationService notificationService;
+
+    @Autowired
+    private AuthenticationService authenticationService;
 
     @Autowired
     private OutputService outputService;
@@ -48,11 +52,8 @@ public class NotificationController {
     @RequestMapping(value = "/api/clear", method = RequestMethod.GET)
     public Object clearNotifications(HttpServletRequest request) {
 
-        User user = (User) request.getSession().getAttribute("user");
-//        if (user == null) {
-//            return ResultDTO.errorOf(CommunityErrorCode.TOKEN_SESSION_HAS_EXPIRED);
-//        }
-        notificationService.clearByReceiver(user);
+        User sessionUserByRequest = this.authenticationService.getSessionUserByRequest(request);
+        notificationService.clearByReceiver(sessionUserByRequest);
 
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();

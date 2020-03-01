@@ -71,13 +71,11 @@ public class CommentController {
 
         //更新Redis中的question和comments数据
         QuestionDTO dtoFromDB = questionService.findDTOById(parentId);
-        QuestionDTO dtoFromRedis = (QuestionDTO) redisUtil.hget(redisUtil.QUESTION, parentId.toString());
-        if (dtoFromRedis != null) {
-            List<CommentDTO> comments = commentService.listByTargetId(parentId, CommentTypeEnum.QUESTION.getType());
-            //更新Redis上的数据
-            redisUtil.hset(redisUtil.QUESTION, parentId.toString(), dtoFromDB);
-            redisUtil.hset(redisUtil.COMMENTS, parentId.toString(), comments);
-        }
+
+        List<CommentDTO> comments = commentService.listByTargetId(parentId, CommentTypeEnum.QUESTION.getType());
+        //更新Redis上的数据
+        redisUtil.hset(redisUtil.QUESTION, parentId.toString(), dtoFromDB);
+        redisUtil.hset(redisUtil.COMMENTS, parentId.toString(), comments);
 
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();

@@ -40,45 +40,34 @@ public class RSAEnDecryptService {
         String publicKey = null;
 
         //先从Redis读取
-        if (redisUtil.testConnection()) {
+        try {
+            privateKey = (String) redisUtil.get(RedisUtil.RSA_PRIVATE_KEY);
+            publicKey = (String) redisUtil.get(RedisUtil.RSA_PUBLIC_KEY);
+            //Redis不存在
+            if (StringUtils.isEmpty(publicKey) || StringUtils.isEmpty(privateKey)) {
 
-            try {
-                privateKey = (String) redisUtil.get(RedisUtil.RSA_PRIVATE_KEY);
-                publicKey = (String) redisUtil.get(RedisUtil.RSA_PUBLIC_KEY);
-                //Redis不存在
+                //从数据库读取
+                publicKey = sysparamService.findRSAPublicKey();
+                privateKey = sysparamService.findRSAPrivateKey();
                 if (StringUtils.isEmpty(publicKey) || StringUtils.isEmpty(privateKey)) {
-
-                    //从数据库读取
-                    publicKey = sysparamService.findRSAPublicKey();
-                    privateKey = sysparamService.findRSAPrivateKey();
-                    if (StringUtils.isEmpty(publicKey) || StringUtils.isEmpty(privateKey)) {
-                        //生成一对新的密钥
-                        //系统初始化后，第一个注册的用户会生成，后续如果因为系统原因导致没数据，再生产会出大事，
-                        //因此最好是单独保管第一次生成的密钥对；
-                        KeyPair keyPair = RSAUtil.getKeyPair();
-                        privateKey = new String(Base64Util.encoder(keyPair.getPrivate().getEncoded()));
-                        publicKey = new String(Base64Util.encoder(keyPair.getPublic().getEncoded()));
-                        //存入数据库
-                        sysparamService.updatePublicKey(publicKey);
-                        sysparamService.updatePrivateKey(privateKey);
-                    }
-                    //存入Redis
-                    redisUtil.set(RedisUtil.RSA_PRIVATE_KEY, privateKey);
-                    redisUtil.set(RedisUtil.RSA_PUBLIC_KEY, publicKey);
+                    //生成一对新的密钥
+                    //系统初始化后，第一个注册的用户会生成，后续如果因为系统原因导致没数据，再生产会出大事，
+                    //因此最好是单独保管第一次生成的密钥对；
+                    KeyPair keyPair = RSAUtil.getKeyPair();
+                    privateKey = new String(Base64Util.encoder(keyPair.getPrivate().getEncoded()));
+                    publicKey = new String(Base64Util.encoder(keyPair.getPublic().getEncoded()));
+                    //存入数据库
+                    sysparamService.updatePublicKey(publicKey);
+                    sysparamService.updatePrivateKey(privateKey);
                 }
-                return publicKey;
-            } catch (Exception e) {
-                throw new CustomizeException(CommonErrorCode.SYSTEM_RSA_ERROR);
+                //存入Redis
+                redisUtil.set(RedisUtil.RSA_PRIVATE_KEY, privateKey);
+                redisUtil.set(RedisUtil.RSA_PUBLIC_KEY, publicKey);
             }
-
-        } else {
-            //从数据库获取
-            publicKey = sysparamService.findRSAPublicKey();
-            if (publicKey == null) {
-                throw new CustomizeException(CommonErrorCode.SYSTEM_RSA_ERROR);
-            }
+            return publicKey;
+        } catch (Exception e) {
+            throw new CustomizeException(CommonErrorCode.SYSTEM_RSA_ERROR);
         }
-        return publicKey;
     }
 
     /**
@@ -96,6 +85,7 @@ public class RSAEnDecryptService {
             if (StringUtils.isEmpty(privateKey)) {
                 throw new CustomizeException(CommonErrorCode.SYSTEM_RSA_ERROR);
             }
+            redisUtil.set(RedisUtil.RSA_PRIVATE_KEY, privateKey);
         }
         return privateKey;
     }

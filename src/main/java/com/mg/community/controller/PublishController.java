@@ -10,6 +10,7 @@ import com.mg.community.exception.CommunityErrorCode;
 import com.mg.community.exception.CustomizeException;
 import com.mg.community.model.Question;
 import com.mg.community.model.User;
+import com.mg.community.service.AuthenticationService;
 import com.mg.community.service.QuestionService;
 import com.mg.community.util.RedisUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -35,6 +36,9 @@ public class PublishController {
     @Autowired
     private OutputService outputService;
 
+    @Autowired
+    private AuthenticationService authenticationService;
+
     @UserLoginToken
     @GetMapping("/api/publish/{id}")
     public Object edit(@PathVariable(name = "id") Long id,
@@ -43,17 +47,12 @@ public class PublishController {
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();
 
-        QuestionDTO questionDTO=null;
+        QuestionDTO questionDTO = null;
         //先从Redis中获取，若不存在，再从数据库中读取
-        if(redisUtil.testConnection()) {
-            questionDTO = (QuestionDTO) redisUtil.hget(redisUtil.QUESTION, id.toString());
-        }
-
-        if(questionDTO == null){
+        questionDTO = (QuestionDTO) redisUtil.hget(redisUtil.QUESTION, id.toString());
+        if (questionDTO == null) {
             questionDTO = questionService.findDTOById(id);
-            if(redisUtil.testConnection()) {
-                redisUtil.hset(redisUtil.QUESTION, id.toString(), questionDTO);
-            }
+            redisUtil.hset(redisUtil.QUESTION, id.toString(), questionDTO);
         }
 
         //页面回显字段信息
@@ -117,7 +116,7 @@ public class PublishController {
         String checkInvalidTag = TagCache.checkInvalid(tag);
         if (!StringUtils.isBlank(checkInvalidTag)) {
             Map<String, String> map = new HashMap<>();
-            map.put("&1",checkInvalidTag);
+            map.put("&1", checkInvalidTag);
             throw new CustomizeException(CommunityErrorCode.PUBLISH_TAG_INVALID, map);
         }
 
@@ -125,7 +124,7 @@ public class PublishController {
         String[] tagSplit = tag.split(",");
         String tagNew = Arrays.stream(tagSplit).map(t -> t.trim())
                 .distinct()
-                .filter(t -> t != null && t.length() > 0 && t!="")
+                .filter(t -> t != null && t.length() > 0 && t != "")
                 .collect(Collectors.joining(","));
         tag = tagNew;
 
@@ -134,15 +133,15 @@ public class PublishController {
         question.setTitle(title);
         question.setContent(content);
         question.setTag(tag);
-        User user = (User) request.getSession().getAttribute("user");
-        question.setCreator(user.getId());
+        User sessionUserByRequest = authenticationService.getSessionUserByRequest(request);
+        question.setCreator(sessionUserByRequest.getId());
         if (id != null && id > 0) {
             question.setId(id);
         }
         questionService.createOrUpdate(question);
 
         //更新Redis中question数据
-        if(id !=null && redisUtil.testConnection()){
+        if (id != null) {
             QuestionDTO questionDTO = questionService.findDTOById(id);
             redisUtil.hset(redisUtil.QUESTION, id.toString(), questionDTO);
 

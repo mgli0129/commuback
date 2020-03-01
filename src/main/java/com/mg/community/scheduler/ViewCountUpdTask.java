@@ -30,24 +30,22 @@ public class ViewCountUpdTask {
 
     /**
      * 自动将Redis的阅读数更新至数据库；
-     * 没fixedRate更新一次
+     * 每fixedRate更新一次
      */
-    @Scheduled(fixedRate = 1000*60*60*20)
+    @Scheduled(fixedRate = 1000 * 60 * 60 * 20)
     public void autoSyncViewCount() {
         log.info("Auto sync view count to database --- start.............");
-        if(redisUtil.testConnection()){
-            Set keys = redisUtil.keys(redisUtil.QUESTION_VIEW_COUNT + "*");
-            if(keys != null){
-                Iterator it = keys.iterator();
-                while(it.hasNext()){
-                    String key = (String) it.next();
-                    long value = ((Integer) redisUtil.get(key)).longValue();
-                    String id = key.split("-")[1];
-                    Question question = questionService.findById(Long.parseLong(id));
-                    if(question!=null){
-                        question.setViewCount(value);
-                        questionService.setNewView(question);
-                    }
+        Set keys = redisUtil.keys(redisUtil.QUESTION_VIEW_COUNT + "*");
+        if (keys != null) {
+            Iterator it = keys.iterator();
+            while (it.hasNext()) {
+                String key = (String) it.next();
+                long value = ((Integer) redisUtil.get(key)).longValue();
+                String id = key.split("-")[1];
+                Question question = questionService.findById(Long.parseLong(id));
+                if (question != null) {
+                    question.setViewCount(value);
+                    questionService.setNewView(question);
                 }
             }
         }

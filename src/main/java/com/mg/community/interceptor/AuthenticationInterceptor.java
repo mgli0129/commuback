@@ -51,7 +51,7 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
         if (method.isAnnotationPresent(UserLoginToken.class)) {
             UserLoginToken userLoginToken = method.getAnnotation(UserLoginToken.class);
             if (userLoginToken.required()) {
-                authenticationService.authenticationProcess(token);
+                authenticationService.authenticationProcess(request, token);
                 return true;
             }
         }
