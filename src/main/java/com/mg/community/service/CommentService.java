@@ -2,6 +2,7 @@ package com.mg.community.service;
 
 import com.mg.community.dto.CommentDTO;
 import com.mg.community.model.Comment;
+import com.mg.community.model.Question;
 import com.mg.community.model.User;
 
 import java.util.List;
@@ -12,4 +13,7 @@ public interface CommentService {
     List<CommentDTO> listByTargetId(Long id, Integer type);
 
     CommentDTO findCommentDTOById(Long id);
+
+    Long findQuestionByCommentId(Long commentId);
+
 }

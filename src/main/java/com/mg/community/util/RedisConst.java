@@ -37,6 +37,12 @@ public interface RedisConst {
     //sessionUser-key
     public final static String SESSION_USER = "session_user-";
 
+    //spring session-key
+    public final static String SPRING_SESSION_SESSIONS = "spring:session:sessions:";
+
+    //spring session user-key
+    public final static String SPRING_SESSION_ATTRIBUTE = "sessionAttr:";
+
     //获取公钥的key
     public final static String RSA_PUBLIC_KEY = "RSAPublicKey";
 

@@ -9,6 +9,8 @@ import com.mg.community.exception.CommonErrorCode;
 import com.mg.community.exception.CustomizeException;
 import com.mg.community.model.User;
 import com.mg.community.util.RedisUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +33,7 @@ import javax.servlet.http.HttpSession;
  * @Version 1.0
  */
 @Service
+@Slf4j
 public class AuthenticationService {
 
     @Autowired
@@ -85,11 +88,39 @@ public class AuthenticationService {
      * @return
      */
     public User getSessionUserByRequest(HttpServletRequest request) {
-        Object sessionUser = request.getSession().getAttribute(this.getUserIdByToken(this.getTokenByRequest(request)) + "");
+
+        User sessionUser1 = (User) request.getSession().getAttribute(this.getUserIdByToken(this.getTokenByRequest(request)) + "");
+        HttpSession session = request.getSession();
+        User sessionUser = (User) session.getAttribute(this.getUserIdByToken(this.getTokenByRequest(request)) + "");
+        log.info("HttpServletRequest.getSession:=========================" + sessionUser1);
+//        String token = this.getTokenByRequest(request);
+//        String sessionId = this.getSessionIdByToken(token);
+//        Object sessionUser = redisUtil.hget(redisUtil.SPRING_SESSION_SESSIONS + sessionId, redisUtil.SPRING_SESSION_ATTRIBUTE + this.getUserIdByToken(token));
         if (sessionUser == null) {
             return null;
         }
-        return (User) sessionUser;
+        log.info("HttpSession.getSession:=========================" + sessionUser);
+        return sessionUser;
+    }
+
+    /**
+     * 通过token获取sessionUser信息
+     *
+     * @param request
+     * @return
+     */
+    public User getSessionUserByToken(HttpServletRequest request, String token) {
+
+        if(StringUtils.isBlank(token)){
+            return null;
+        }
+        HttpSession session = request.getSession();
+        User sessionUser = (User) session.getAttribute(this.getUserIdByToken(token) + "");
+        if (sessionUser == null) {
+            return null;
+        }
+        log.info("HttpSession.getSession:=========================" + sessionUser);
+        return sessionUser;
     }
 
     /**
@@ -161,6 +192,11 @@ public class AuthenticationService {
 
     /**
      * 判断Token是否存在于Redis中
+     * 1）通过token查询Redis中是否存在？
+     * 2）如果不存在，则表示已经过期；
+     * 3）如果存在，取出sessionId，通过sessionId查询Redis中是否存在session？
+     * 4）如果不存在，则表示已经过期，从Redis中删除token；
+     * 5）如果存在，取出session里的user，并设置到当前的session里；
      *
      * @param token
      * @return
@@ -169,7 +205,20 @@ public class AuthenticationService {
         if (token == null) {
             return false;
         }
-        return redisUtil.hasKey(redisUtil.TOKEN + getUserIdByToken(token) + "-" + token);
+        if (!redisUtil.hasKey(redisUtil.TOKEN + getUserIdByToken(token) + "-" + token)) {
+            return false;
+        }
+        String sessionId = (String) redisUtil.get(redisUtil.TOKEN + getUserIdByToken(token) + "-" + token);
+        if (!redisUtil.hasKey(redisUtil.SPRING_SESSION_SESSIONS + sessionId)) {
+            redisUtil.del(redisUtil.TOKEN + getUserIdByToken(token) + "-" + token);
+            return false;
+        }
+//        User sessionUser = (User) redisUtil.hget(redisUtil.SPRING_SESSION_SESSIONS + sessionId, redisUtil.SPRING_SESSION_ATTRIBUTE + this.getUserIdByToken(token));
+//        if (sessionUser == null) {
+//            redisUtil.del(redisUtil.TOKEN + getUserIdByToken(token) + "-" + token);
+//            return false;
+//        }
+        return true;
     }
 
     public void authenticationProcess(HttpServletRequest request, String token) {
@@ -202,15 +251,6 @@ public class AuthenticationService {
         // 验证token是否过期
         if (!existToken(token)) {
             throw new CustomizeException(CommonErrorCode.TOKEN_HAS_EXPIRED);
-        }
-
-        // sessionUser是否已经失效
-        String preSessionId = this.getSessionIdByToken(token);
-        if (preSessionId == null || !preSessionId.equals(request.getSession().getId())) {
-            if (!preSessionId.equals(request.getSession().getId())) {
-                this.delToken(request);
-            }
-            throw new CustomizeException(CommonErrorCode.TOKEN_SESSION_HAS_EXPIRED);
         }
     }
 

@@ -8,6 +8,7 @@ import com.mg.community.dto.ResultDTO;
 import com.mg.community.enums.CommentTypeEnum;
 import com.mg.community.exception.CommunityErrorCode;
 import com.mg.community.model.Comment;
+import com.mg.community.model.Question;
 import com.mg.community.model.User;
 import com.mg.community.service.AuthenticationService;
 import com.mg.community.service.CommentService;
@@ -69,13 +70,22 @@ public class CommentController {
         comment.setCommentator(sessionUserByRequest.getId());
         commentService.createOrUpdate(comment, sessionUserByRequest);
 
-        //更新Redis中的question和comments数据
-        QuestionDTO dtoFromDB = questionService.findDTOById(parentId);
+        QuestionDTO dtoFromDB;
+        Long questionId;
+        List<CommentDTO> comments;
+        if (type == CommentTypeEnum.QUESTION.getType()) {
+            questionId = parentId;
+        } else {
+            questionId = commentService.findQuestionByCommentId(parentId);
+        }
 
-        List<CommentDTO> comments = commentService.listByTargetId(parentId, CommentTypeEnum.QUESTION.getType());
+        //更新Redis中的question和comments数据
+        dtoFromDB = questionService.findDTOById(questionId);
+        comments = commentService.listByTargetId(questionId, CommentTypeEnum.QUESTION.getType());
+
         //更新Redis上的数据
-        redisUtil.hset(redisUtil.QUESTION, parentId.toString(), dtoFromDB);
-        redisUtil.hset(redisUtil.COMMENTS, parentId.toString(), comments);
+        redisUtil.hset(redisUtil.QUESTION, questionId.toString(), dtoFromDB);
+        redisUtil.hset(redisUtil.COMMENTS, questionId.toString(), comments);
 
         //输出格式测试
         Map<String, Object> outUni = new HashMap<String, Object>();

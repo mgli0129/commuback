@@ -34,7 +34,7 @@ public class OutputService {
                 return null;
             }
         }
-        User sessionUserByToken = (User) request.getSession().getAttribute(authenticationService.getUserIdByToken(token) + "");
+        User sessionUserByToken = authenticationService.getSessionUserByToken(request, token);
         if(sessionUserByToken == null){
             return null;
         }

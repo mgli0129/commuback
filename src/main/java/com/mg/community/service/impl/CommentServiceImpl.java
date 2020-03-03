@@ -112,7 +112,7 @@ public class CommentServiceImpl implements CommentService {
         CommentExample commentExample = new CommentExample();
         commentExample.createCriteria().andIdEqualTo(id);
         List<Comment> comments = commentMapper.selectByExample(commentExample);
-        if(comments == null){
+        if (comments == null) {
             return null;
         }
         return comments.get(0);
@@ -173,7 +173,7 @@ public class CommentServiceImpl implements CommentService {
         CommentExample commentExample = new CommentExample();
         commentExample.createCriteria().andIdEqualTo(id);
         List<Comment> comments = commentMapper.selectByExample(commentExample);
-        if(comments != null){
+        if (comments != null) {
             CommentDTO commentDTO = new CommentDTO();
             BeanUtils.copyProperties(comments.get(0), commentDTO);
             User user = userService.findById(comments.get(0).getCommentator());
@@ -181,8 +181,28 @@ public class CommentServiceImpl implements CommentService {
             BeanUtils.copyProperties(user, basicUser);
             commentDTO.setUser(basicUser);
             return commentDTO;
-        }else {
+        } else {
             throw new CustomizeException(CommunityErrorCode.COMMENT_NOT_FOUND);
+        }
+    }
+
+    @Override
+    public Long findQuestionByCommentId(Long commentId) {
+        Comment comment = this.findById(commentId);
+        if (comment == null) {
+            return 0l;
+        }
+        if (comment.getType() == 1) {
+            return comment.getParentId();
+        } else if (comment.getType() == 2) {
+            Comment parentComment = this.findById(comment.getParentId());
+            if (parentComment == null) {
+                return 0l;
+            } else {
+                return parentComment.getParentId();
+            }
+        } else {
+            return 0l;
         }
     }
 }
