@@ -10,6 +10,7 @@ import com.mg.community.exception.CustomizeException;
 import com.mg.community.model.User;
 import com.mg.community.service.AuthenticationService;
 import com.mg.community.service.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,11 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
 //@CrossOrigin(origins = "http://localhost:8080")
 @RestController
+@Slf4j
 public class GithubOAuthController {
 
     @Autowired
@@ -47,11 +50,15 @@ public class GithubOAuthController {
     @Value("${github.redirect.uri}")
     private String githubRedirectUri;
 
-    @GetMapping("/callback")
+    @GetMapping("/api/callback")
     public Object callback(@RequestParam("code") String code,
                            @RequestParam("state") String state,
                            HttpServletRequest request,
                            HttpServletResponse response) {
+
+        log.info("======The Start Time:" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(System.currentTimeMillis()));
+
+
         if (code == null || code.equals("")) {
             return ResultDTO.errorOf(CommonErrorCode.LOGIN_GITHUB_ACCOUNT_VERIFIED_FAILURE);
         }
@@ -65,6 +72,7 @@ public class GithubOAuthController {
         System.out.println(accessToken);
 
         String accessCode = accessToken.split("&")[0].split("=")[1];
+        System.out.println(accessCode);
         accessTokenDTO.setCode(accessCode);
         GithubUser githubUser = githubProvider.getGithubUser(accessTokenDTO);
 
@@ -79,6 +87,9 @@ public class GithubOAuthController {
 //                token = UUID.randomUUID().toString();
 //                user.setToken(token);
                 user.setAvatarUrl(githubUser.getAvatarUrl());
+                user.setAcctType("TRD");
+                user.setTrdType("GIT");
+                user.setPhone("13800000000");
                 userService.createOrUpdate(user);
                 userAcc = userService.findByAccountId(githubUser.getLogin());
             }/* else {
@@ -95,6 +106,7 @@ public class GithubOAuthController {
             Map<String, Object> outUni = new HashMap<String, Object>();
             outUni.put("common", outputService.getCommonOutput(request, token));
 
+            log.info("======The End Time:" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(System.currentTimeMillis()));
             return ResultDTO.okOf(outUni);
         } else {
             //登录失败
